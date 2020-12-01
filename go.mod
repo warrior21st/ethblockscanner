@@ -1,3 +1,3 @@
-module github.com/warrior21st/ethtxscaner
+module github.com/warrior21st/ethtxscanner
 
 go 1.14
