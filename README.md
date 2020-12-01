@@ -1,7 +1,7 @@
 # ethereum block transactions scanner
 ### pkg
     import "github.com/warrior21st/ethtxscaner"
-### Sample Code
+### Sample code
     endpoint := "https://mainnet.infura.io"
     usdtAddr := "0xdac17f958d2ee523a2206206994597c13d831ec7"
     methodIds := []string{hex.EncodeToString(crypto.Keccak256([]byte("transfer(address,uint256)"))[:4])}
