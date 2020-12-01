@@ -49,6 +49,8 @@ type TxInfo struct {
 	TransactionIndex  uint
 	GasUsed           uint64
 	CumulativeGasUsed uint64
+
+	receipt *types.Receipt
 }
 
 var (
@@ -182,6 +184,8 @@ func scan(startBlock uint64) error {
 			if err != nil {
 				return err
 			}
+
+			txInfo.receipt = receipt
 			txInfo.Status = receipt.Status
 			txInfo.TransactionIndex = receipt.TransactionIndex
 			txInfo.GasUsed = receipt.GasUsed
@@ -200,6 +204,12 @@ func scan(startBlock uint64) error {
 	return nil
 }
 
+//获取tx logs
+func (tx *TxInfo) Logs() []*types.Log {
+	return tx.receipt.Logs
+}
+
+//获取tx的json形式
 func (tx *TxInfo) JSON() string {
 	var sb strings.Builder
 	sb.WriteString(`{"TxHash":"`)
