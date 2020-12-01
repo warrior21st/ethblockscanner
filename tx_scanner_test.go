@@ -1,14 +1,21 @@
-# ethereum block transactions scanner
-### pkg
-    import "github.com/warrior21st/ethtxscaner"
-### Sample Code
-    endpoint := "https://mainnet.infura.io"
-    usdtAddr := "0xdac17f958d2ee523a2206206994597c13d831ec7"
-    methodIds := []string{hex.EncodeToString(crypto.Keccak256([]byte("transfer(address,uint256)"))[:4])}
-    txWatcher := ethtxlistener.NewSimpleTxWatcher(endpoint, 11358668)
-    txWatcher.WatchToAndMethods(usdtAddr, methodIds, func(tx *TxInfo) error {
-        jsonStr := tx.JSON()
-        fmt.Println("txinfos:" + jsonStr)
+package ethtxscanner
+
+import (
+	"encoding/hex"
+	"fmt"
+
+	"github.com/ethereum/go-ethereum/crypto"
+)
+
+func TestEthTxScanner() {
+	endpoint := "https://mainnet.infura.io"
+	usdtAddr := "0xdac17f958d2ee523a2206206994597c13d831ec7"
+	methodIds := []string{hex.EncodeToString(crypto.Keccak256([]byte("transfer(address,uint256)"))[:4])}
+
+	txWatcher := NewSimpleTxWatcher(endpoint, 11358668)
+	txWatcher.WatchToAndMethods(usdtAddr, methodIds, func(tx *TxInfo) error {
+		jsonStr := tx.JSON()
+		fmt.Println("txinfos:" + jsonStr)
 
 		// output：
 		// {
@@ -34,8 +41,8 @@
 		// 	"CumulativeGasUsed":11655570
 		// }
 
-        return nil
-    })
+		return nil
+	})
 
-    ethtxlistener.Start(txWatcher)
-
+	Start(txWatcher)
+}
