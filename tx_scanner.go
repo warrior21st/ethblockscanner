@@ -22,9 +22,9 @@ type TxWatcher interface {
 	GetEndpoint() string
 
 	//是否是需要解析的tx
-	IsWatchTx(from string, to string, methodId string) bool
+	IsInterestedTx(from string, to string) bool
 
-	ProcessTx(tx *TxInfo) error
+	Callback(tx *TxInfo) error
 }
 
 //tx相关信息
@@ -154,8 +154,7 @@ func scan(startBlock uint64) error {
 			if txData != nil && len(txData) >= 4 {
 				methodId = hex.EncodeToString(txData[0:4])
 			}
-			isWatchTx := _txWatcher.IsWatchTx(from, to, methodId)
-			if !isWatchTx {
+			if !_txWatcher.IsInterestedTx(from, to) {
 				continue
 			}
 			txInfo := &TxInfo{
@@ -192,7 +191,7 @@ func scan(startBlock uint64) error {
 			txInfo.CumulativeGasUsed = receipt.CumulativeGasUsed
 
 			logMsg("processing tx " + txInfo.TxHash + "...")
-			err = _txWatcher.ProcessTx(txInfo)
+			err = _txWatcher.Callback(txInfo)
 			if err != nil {
 				return err
 			}

@@ -7,16 +7,16 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 )
 
-func TestEthTxScanner() {
+func Test() {
 	endpoint := "https://mainnet.infura.io"
 	usdtAddr := "0xdac17f958d2ee523a2206206994597c13d831ec7"
-	methodIds := []string{hex.EncodeToString(crypto.Keccak256([]byte("transfer(address,uint256)"))[:4])}
 
-	txWatcher := NewSimpleTxWatcher(endpoint, 11358668)
-	txWatcher.WatchToAndMethods(usdtAddr, methodIds, func(tx *TxInfo) error {
-		jsonStr := tx.JSON()
-		fmt.Println("txinfos:" + jsonStr)
-
+	txWatcher := NewSimpleTxWatcher(endpoint, 11358668,func(tx *TxInfo) error {
+		transferMethodID:=hex.EncodeToString(crypto.Keccak256([]byte("transfer(address,uint256)"))[:4])
+		if (tx.CallMethodID==transferMethodID){
+			jsonStr := tx.JSON()
+			fmt.Println("txinfos:" + jsonStr)
+		}
 		// output：
 		// {
 		// 	"TxHash":"0x9dbb3cdfd37e31a68fceebdbe7696731557f17197f6753b77d3d47579fd0c7a4",
@@ -43,6 +43,7 @@ func TestEthTxScanner() {
 
 		return nil
 	})
+	txWatcher.AddInterestedTo(usdtAddr)
 
 	Start(txWatcher)
 }
