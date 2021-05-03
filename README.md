@@ -2,40 +2,46 @@
 ### pkg
     import "github.com/warrior21st/ethtxscanner"
 ### Sample code
-    endpoint := "https://mainnet.infura.io"
-    usdtAddr := "0xdac17f958d2ee523a2206206994597c13d831ec7"
-    methodIds := []string{hex.EncodeToString(crypto.Keccak256([]byte("transfer(address,uint256)"))[:4])}
-    txWatcher := ethtxlistener.NewSimpleTxWatcher(endpoint, 11358668)
-    txWatcher.WatchToAndMethods(usdtAddr, methodIds, func(tx *TxInfo) error {
-        jsonStr := tx.JSON()
-        fmt.Println("txinfos:" + jsonStr)
+	endpoint := "https://mainnet.infura.io"
+	usdtAddr := "0xdac17f958d2ee523a2206206994597c13d831ec7"
 
-		// output：
-		// {
-		// 	"TxHash":"0x9dbb3cdfd37e31a68fceebdbe7696731557f17197f6753b77d3d47579fd0c7a4",
-		// 	"BlockHash":"0x9bf9369c52aae2f40186d181720424ef0edae2ebf97d602f472d0309259dad06",
-		// 	"BlockNumber":11358669,
-		// 	"BlockUnixSecs":1606720456,
-		// 	"From":"0xadb2b42f6bd96f5c65920b9ac88619dce4166f94",
-		// 	"Gas":100000,
-		// 	"GasPrice":28000000000,
-		// 	"InputData":"0000000000000000000000006a689b567e350a8b5aafdd46deb6ff71106a404400000000000000000000000000000000000000000000000000000000c499e39a",
-		// 	"Nonce":1368848,
-		// 	"To":"0xdac17f958d2ee523a2206206994597c13d831ec7",
-		// 	"Value":0,
-		// 	"V":"25",
-		// 	"R":"09c0027a8f60cb78f463ddea32a99e8e72aa66ecc07012583267e90a39357707",
-		// 	"S":"25952548d37fd9924556ae5fa37c2488d127384a143adbfa12771dfc28a25eab",
-		// 	"ChainID":1,
-		// 	"CallMethodID":"a9059cbb",
-		// 	"Status":1,
-		// 	"TransactionIndex":148,
-		// 	"GasUsed":56209,
-		// 	"CumulativeGasUsed":11655570
-		// }
+	txWatcher := ethtxscanner.NewSimpleTxWatcher(endpoint, 11358668,func(tx *ethtxscanner.TxInfo) error {
+		transferMethodID:=hex.EncodeToString(crypto.Keccak256([]byte("transfer(address,uint256)"))[:4])
+		if (tx.CallMethodID!=transferMethodID){
+			return nil
+		}
 
-        return nil
-    })
+		jsonStr := tx.JSON()
+		fmt.Println("txinfos:" + jsonStr)
+		fmt.Println(tx.Logs())
+		abiJsonStr := commutil.ReadJsonValue(commutil.ReadFileBytes(commutil.MapPath("/contractabis/ERC20.json")), "abi")
+		contractAbi, err := abi.JSON(strings.NewReader(abiJsonStr))
+		if err != nil {
+			panic(err)
+		}
+		log, err := contractAbi.Unpack("Transfer", tx.Logs()[0].Data)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(log)
 
-    ethtxlistener.Start(txWatcher)
+		utcNow := time.Now().UTC()
+		path := commutil.MapPath("/txlogs")
+
+		if !commutil.IsExistPath(path) {
+			os.Mkdir(path, 0755)
+		}
+		path = commutil.CombinePath(path, commutil.TimeToDateString(&utcNow)+".log")
+		file, _ := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0755)
+		defer file.Close()
+
+		buffer := bufio.NewWriter(file)
+		buffer.WriteString(time.Now().UTC().Add(time.Hour*8).Format("2006-01-02 15:04:05") + " " + jsonStr + "\n")
+		buffer.Flush()
+
+		return nil
+	})
+	txWatcher.AddInterestedTo(usdtAddr)
+
+	ethtxscanner.Start(txWatcher)
 
