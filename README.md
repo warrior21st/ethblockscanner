@@ -2,9 +2,8 @@
 ### pkg
     import "github.com/warrior21st/ethtxscanner"
 ### Sample code
-	infuraEndpoint:=[your infura endpoint]
-	infuraSecret:=[your infura endpoint]
-	txWatcher := ethtxscanner.NewSimpleTxWatcher(infuraEndpoint, 11358668, func(tx *ethtxscanner.TxInfo) error {
+	endpoint:=[your endpoint]
+	txWatcher := ethtxscanner.NewSimpleTxWatcher(endpoint, 11358668, func(tx *ethtxscanner.TxInfo) error {
 		transferMethodID := hex.EncodeToString(crypto.Keccak256([]byte("transfer(address,uint256)"))[:4])
 		if tx.CallMethodID != transferMethodID {
 			return nil
@@ -38,8 +37,9 @@
 		return nil
 	})
 
-	txWatcher.SetInfuraSecret(infuraSecret)
-	txWatcher.AddInterestedTo(usdtAddr)
+	//if your endpoint is infura and require secret
+	txWatcher.SetInfuraSecret([your infura secret])
 
+	txWatcher.AddInterestedTo(usdtAddr)
 	ethtxscanner.Start(txWatcher)
 
