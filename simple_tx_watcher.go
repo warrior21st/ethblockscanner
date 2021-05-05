@@ -28,7 +28,7 @@ func NewSimpleTxWatcher(endpoint string, scanStartBlock uint64, callback func(*T
 	}
 }
 
-func (watcher *SimpleTxWatcher) SetEndpointInfuraSecret(secret string) {
+func (watcher *SimpleTxWatcher) SetInfuraSecret(secret string) {
 	watcher.infuraSecret = secret
 }
 
