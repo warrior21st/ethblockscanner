@@ -16,7 +16,7 @@
 		abiJsonStr := jsonutil.ReadJsonValue(commonutil.ReadFileBytes(commonutil.MapPath("/contractabis/ERC20.json")), "abi")
 		contractAbi, err := abi.JSON(strings.NewReader(abiJsonStr))
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		var transferEvent struct {
