@@ -19,7 +19,7 @@ type TxWatcher interface {
 	GetScanStartBlock() uint64
 
 	//获取节点地址
-	GetEndpoint() string
+	GetEthClient() (*ethclient.Client, error)
 
 	//是否是需要解析的tx
 	IsInterestedTx(from string, to string) bool
@@ -70,7 +70,7 @@ func Start(txWatcher TxWatcher) error {
 			_lastScanedBlockNumber = startBlock - 1
 		}
 	}
-	client, err := ethclient.Dial(_txWatcher.GetEndpoint())
+	client, err := _txWatcher.GetEthClient()
 	if err != nil {
 		return err
 	}
@@ -81,8 +81,7 @@ func Start(txWatcher TxWatcher) error {
 	}
 	_chainID = cid
 	_signer = types.NewEIP155Signer(_chainID)
-
-	logMsg("scaning on endpoint:" + _txWatcher.GetEndpoint() + ",chainID:" + _chainID.String())
+	logMsg("chainID:" + _chainID.String() + ",scaning...")
 
 	client.Close()
 
@@ -99,7 +98,7 @@ func Start(txWatcher TxWatcher) error {
 }
 
 func scan(startBlock uint64) error {
-	client, err := ethclient.Dial(_txWatcher.GetEndpoint())
+	client, err := _txWatcher.GetEthClient()
 	if err != nil {
 		return err
 	}
