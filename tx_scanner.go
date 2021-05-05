@@ -166,19 +166,19 @@ func scan(startBlock uint64) (uint64, error) {
 		currBlock := i
 		logToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "...")
 		var availableIndexes []int
-		var willUseIndex int
+		var willUseAvaiIndex int
 		for i := 0; i < len(clients); i++ {
 			if currBlock <= blockNumbers[i] {
 				availableIndexes = append(availableIndexes, i)
 			}
 		}
-		willUseIndex = int(currBlock % uint64(len(availableIndexes)))
+		willUseAvaiIndex = int(currBlock % uint64(len(availableIndexes)))
 
 		var client *ethclient.Client
 		var block *types.Block
 		errCount = 0
 		unavaiIndexes := make(map[int]bool)
-		tempIndex := willUseIndex
+		tempIndex := willUseAvaiIndex
 		for true {
 			if unavaiIndexes[tempIndex] {
 				continue
@@ -228,8 +228,8 @@ func scan(startBlock uint64) (uint64, error) {
 			if err != nil {
 				return 0, err
 			}
-			from := "0x" + strings.ToLower(hexutil.Encode(fromAddr.Bytes()))
-			to := "0x" + strings.ToLower(hexutil.Encode(tx.To().Bytes()))
+			from := strings.ToLower(hexutil.Encode(fromAddr.Bytes()))
+			to := strings.ToLower(hexutil.Encode(tx.To().Bytes()))
 			methodId := ""
 			if txData != nil && len(txData) >= 4 {
 				methodId = hex.EncodeToString(txData[0:4])
@@ -238,7 +238,7 @@ func scan(startBlock uint64) (uint64, error) {
 				continue
 			}
 			txInfo := &TxInfo{
-				TxHash:        "0x" + strings.ToLower(tx.Hash().Hex()),
+				TxHash:        strings.ToLower(tx.Hash().Hex()),
 				From:          from,
 				Gas:           tx.Gas(),
 				GasPrice:      tx.GasPrice(),
