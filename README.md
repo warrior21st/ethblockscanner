@@ -3,8 +3,8 @@
     import "github.com/warrior21st/ethtxscanner"
 ### Sample code
 	usdtAddr := "0xdac17f958d2ee523a2206206994597c13d831ec7"
-	endpoints:=[2]string{ "https://mainnet.infura.io/v3/[your infura project 1 ID]", "https://mainnet.infura.io/v3/[your infura project 2 ID]"}
-	secrets:=[2]string{ "[your infura project 1 secret]", "[your infura project 2 secret]"}
+	endpoints:=[]string{ "https://mainnet.infura.io/v3/[your infura project 1 ID]", "https://mainnet.infura.io/v3/[your infura project 2 ID]",...}
+	secrets:=[]string{ "[your infura project 1 secret]", "[your infura project 2 secret]",...}
 	interval := 1 * time.Second
 	txWatcher := ethtxscanner.NewSimpleTxWatcher(endpoints, 11358668, interval, func(tx *ethtxscanner.TxInfo) error {
 		transferMethodID := hex.EncodeToString(crypto.Keccak256([]byte("transfer(address,uint256)"))[:4])
