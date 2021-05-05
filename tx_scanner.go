@@ -147,10 +147,11 @@ func scan(startBlock uint64) (uint64, error) {
 
 			blockHeightsMsg += "client_" + strconv.Itoa(i) + " blockheight:" + strconv.FormatUint(bn, 10) + ",   "
 		} else {
+			blockHeightsMsg += "client_" + strconv.Itoa(i) + " get blockheight error,"
 			errCount++
 		}
 	}
-	logToConsole(blockHeightsMsg)
+	logToConsole(strings.Trim(blockHeightsMsg, ",") + ".")
 
 	if errCount == len(clients)-1 {
 		return 0, err
@@ -160,7 +161,7 @@ func scan(startBlock uint64) (uint64, error) {
 		return 0, nil
 	}
 
-	scanedBlock := uint64(0)
+	scanedMaxBlock := uint64(0)
 	for i := startBlock; i <= maxBlock; i++ {
 		currBlock := i
 		logToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "...")
@@ -179,7 +180,7 @@ func scan(startBlock uint64) (uint64, error) {
 		unavaiIndexes := make(map[int]bool)
 		tempIndex := willUseIndex
 		for true {
-			if !unavaiIndexes[availableIndexes[tempIndex]] {
+			if unavaiIndexes[tempIndex] {
 				continue
 			}
 
@@ -187,6 +188,7 @@ func scan(startBlock uint64) (uint64, error) {
 			block, err = client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
 			if err != nil {
 				errCount++
+				unavaiIndexes[tempIndex] = true
 			} else {
 				break
 			}
@@ -270,14 +272,14 @@ func scan(startBlock uint64) (uint64, error) {
 			logToConsole("processing tx " + txInfo.TxHash + "...")
 			err = _txWatcher.Callback(txInfo)
 			if err != nil {
-				return scanedBlock, err
+				return scanedMaxBlock, err
 			}
 		}
 
-		scanedBlock = currBlock
+		scanedMaxBlock = currBlock
 	}
 
-	return scanedBlock, nil
+	return scanedMaxBlock, nil
 }
 
 //获取tx logs
