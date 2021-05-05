@@ -74,8 +74,8 @@ func Start(txWatcher TxWatcher) error {
 	if err != nil {
 		return err
 	}
-	ctx1 := context.Background()
-	cid, err := client.ChainID(ctx1)
+
+	cid, err := client.ChainID(context.Background())
 	if err != nil {
 		return err
 	}
@@ -104,8 +104,7 @@ func scan(startBlock uint64) error {
 	}
 	defer client.Close()
 
-	ctx := context.Background()
-	maxBn, err := client.BlockNumber(ctx)
+	maxBn, err := client.BlockNumber(context.Background())
 	if err != nil {
 		return err
 	}
@@ -114,12 +113,11 @@ func scan(startBlock uint64) error {
 	}
 	for _lastScanedBlockNumber < maxBn {
 		logMsg("scaning block " + strconv.FormatUint(_lastScanedBlockNumber, 10) + "...")
-		ctx2 := context.Background()
 		currBlock := _lastScanedBlockNumber
 		if _lastScanedBlockNumber > 0 {
 			currBlock += 1
 		}
-		block, err := client.BlockByNumber(ctx2, new(big.Int).SetUint64(currBlock))
+		block, err := client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
 		if err != nil {
 			return err
 		}
@@ -177,8 +175,7 @@ func scan(startBlock uint64) error {
 				txInfo.InputData = txData[4:]
 			}
 
-			ctx3 := context.Background()
-			receipt, err := client.TransactionReceipt(ctx3, tx.Hash())
+			receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
 			if err != nil {
 				return err
 			}
