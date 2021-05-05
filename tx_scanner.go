@@ -133,7 +133,7 @@ func scan(startBlock uint64) (uint64, error) {
 		defer clients[i].Close()
 	}
 
-	var blockNumbers []uint64
+	blockNumbers := make([]uint64, len(clients))
 	var maxBlock uint64
 	msg := "scaning start block:" + strconv.FormatUint(startBlock, 10) + ","
 	errCount := 0
@@ -158,49 +158,52 @@ func scan(startBlock uint64) (uint64, error) {
 		return 0, nil
 	}
 
-	var scanedBlock uint64 = 0
+	scanedBlock := uint64(0)
 	for i := startBlock; i <= maxBlock; i++ {
 		currBlock := i
 		logToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "...")
 		index := currBlock % uint64(len(clients))
 		client := clients[index]
 		var availableIndexes []int
-		var availableIndex int
+		var willUseIndex int
 		if blockNumbers[index] < currBlock {
 			for i := 0; i < len(clients); i++ {
 				if currBlock <= blockNumbers[i] {
-					availableIndexes[len(availableIndexes)] = i
+					availableIndexes = append(availableIndexes, i)
 				}
 			}
 
-			availableIndex := currBlock % uint64(len(availableIndexes))
-			client = clients[availableIndexes[availableIndex]]
+			willUseIndex = int(currBlock % uint64(len(availableIndexes)))
 		}
 
 		var block *types.Block
 		block, err = client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
-		if err != nil {
-			errCount = 0
-			var unavaiIndexes map[int]bool
-			unavaiIndexes[availableIndex] = false
-			for i := 0; i < len(availableIndexes); i++ {
-				if !unavaiIndexes[availableIndexes[i]] {
-					errCount++
-					continue
-				}
-
-				client = clients[availableIndexes[i]]
-				block, err = client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
-				if err != nil {
-					unavaiIndexes[availableIndexes[i]] = false
-					errCount++
-				} else {
-					break
-				}
+		errCount = 0
+		var unavaiIndexes map[int]bool
+		tempIndex := willUseIndex
+		for true {
+			if !unavaiIndexes[availableIndexes[tempIndex]] {
+				continue
 			}
+
+			client = clients[availableIndexes[tempIndex]]
+			block, err = client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
+			if err != nil {
+				errCount++
+			} else {
+				break
+			}
+
 			if errCount == len(availableIndexes) {
 				return 0, err
 			}
+
+			if tempIndex == len(availableIndexes)-1 {
+				tempIndex = 0
+			} else {
+				tempIndex++
+			}
+
 		}
 
 		blockUnixSecs := block.Time()
