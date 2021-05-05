@@ -135,7 +135,7 @@ func scan(startBlock uint64) (uint64, error) {
 
 	blockNumbers := make([]uint64, len(clients))
 	var maxBlock uint64
-	msg := "scaning start block:" + strconv.FormatUint(startBlock, 10) + ","
+	blockHeightsMsg := "scaning start block:" + strconv.FormatUint(startBlock, 10) + ","
 	errCount := 0
 	for i := 0; i < len(clients); i++ {
 		bn, err := clients[i].BlockNumber(context.Background())
@@ -145,11 +145,13 @@ func scan(startBlock uint64) (uint64, error) {
 			}
 			blockNumbers[i] = bn
 
-			msg += "client_" + strconv.Itoa(i) + " blockheight:" + strconv.FormatUint(bn, 10) + ",   "
+			blockHeightsMsg += "client_" + strconv.Itoa(i) + " blockheight:" + strconv.FormatUint(bn, 10) + ",   "
 		} else {
 			errCount++
 		}
 	}
+	logToConsole(blockHeightsMsg)
+
 	if errCount == len(clients)-1 {
 		return 0, err
 	}
@@ -162,22 +164,17 @@ func scan(startBlock uint64) (uint64, error) {
 	for i := startBlock; i <= maxBlock; i++ {
 		currBlock := i
 		logToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "...")
-		index := currBlock % uint64(len(clients))
-		client := clients[index]
 		var availableIndexes []int
 		var willUseIndex int
-		if blockNumbers[index] < currBlock {
-			for i := 0; i < len(clients); i++ {
-				if currBlock <= blockNumbers[i] {
-					availableIndexes = append(availableIndexes, i)
-				}
+		for i := 0; i < len(clients); i++ {
+			if currBlock <= blockNumbers[i] {
+				availableIndexes = append(availableIndexes, i)
 			}
-
-			willUseIndex = int(currBlock % uint64(len(availableIndexes)))
 		}
+		willUseIndex = int(currBlock % uint64(len(availableIndexes)))
 
+		var client *ethclient.Client
 		var block *types.Block
-		block, err = client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
 		errCount = 0
 		unavaiIndexes := make(map[int]bool)
 		tempIndex := willUseIndex
@@ -203,7 +200,6 @@ func scan(startBlock uint64) (uint64, error) {
 			} else {
 				tempIndex++
 			}
-
 		}
 
 		blockUnixSecs := block.Time()
