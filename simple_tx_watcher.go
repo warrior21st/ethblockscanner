@@ -57,7 +57,7 @@ func (watcher *SimpleTxWatcher) GetScanStartBlock() uint64 {
 }
 
 func (watcher *SimpleTxWatcher) GetEthClients() ([]*ethclient.Client, error) {
-	var clients []*ethclient.Client
+	clients := make([]*ethclient.Client, len(watcher.endpoints))
 	for i := 0; i < len(watcher.endpoints); i++ {
 		rpcClient, err := rpc.Dial(watcher.endpoints[i])
 		if err != nil {

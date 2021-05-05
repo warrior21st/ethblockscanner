@@ -179,7 +179,7 @@ func scan(startBlock uint64) (uint64, error) {
 		var block *types.Block
 		block, err = client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
 		errCount = 0
-		var unavaiIndexes map[int]bool
+		unavaiIndexes := make(map[int]bool)
 		tempIndex := willUseIndex
 		for true {
 			if !unavaiIndexes[availableIndexes[tempIndex]] {
