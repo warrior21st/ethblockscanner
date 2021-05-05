@@ -2,8 +2,11 @@
 ### pkg
     import "github.com/warrior21st/ethtxscanner"
 ### Sample code
-	endpoint:=[your endpoint]
-	txWatcher := ethtxscanner.NewSimpleTxWatcher(endpoint, 11358668, func(tx *ethtxscanner.TxInfo) error {
+	usdtAddr := "0xdac17f958d2ee523a2206206994597c13d831ec7"
+	endpoints:=[2]string{ "https://mainnet.infura.io/v3/[your infura project 1 ID]", "https://mainnet.infura.io/v3/[your infura project 2 ID]"}
+	secrets:=[2]string{ "[your infura project 1 secret]", "[your infura project 2 secret]"}
+	interval := 1 * time.Second
+	txWatcher := ethtxscanner.NewSimpleTxWatcher(endpoints, 11358668, interval, func(tx *ethtxscanner.TxInfo) error {
 		transferMethodID := hex.EncodeToString(crypto.Keccak256([]byte("transfer(address,uint256)"))[:4])
 		if tx.CallMethodID != transferMethodID {
 			return nil
@@ -15,7 +18,7 @@
 		abiJsonStr := jsonutil.ReadJsonValue(commonutil.ReadFileBytes(commonutil.MapPath("/contractabis/ERC20.json")), "abi")
 		contractAbi, err := abi.JSON(strings.NewReader(abiJsonStr))
 		if err != nil {
-			return err
+			panic(err)
 		}
 
 		var transferEvent struct {
@@ -37,9 +40,8 @@
 		return nil
 	})
 
-	//if your endpoint is infura and require secret
-	txWatcher.SetInfuraSecret([your infura secret])
-
+	txWatcher.SetInfuraSecrets(secrets)
 	txWatcher.AddInterestedTo(usdtAddr)
+
 	ethtxscanner.Start(txWatcher)
 
