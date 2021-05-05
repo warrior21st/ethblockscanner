@@ -19,12 +19,16 @@ type TxWatcher interface {
 	GetScanStartBlock() uint64
 
 	//获取节点地址
-	GetEthClient() (*ethclient.Client, error)
+	GetEthClients() ([]*ethclient.Client, error)
 
 	//是否是需要解析的tx
 	IsInterestedTx(from string, to string) bool
 
+	//tx回调处理方法
 	Callback(tx *TxInfo) error
+
+	//获取扫描间隔
+	GetScanInterval() time.Duration
 }
 
 //tx相关信息
@@ -62,7 +66,7 @@ var (
 
 //开始扫描
 func Start(txWatcher TxWatcher) error {
-	logMsg("eth tx scanner starting...")
+	logToConsole("eth tx scanner starting...")
 	_txWatcher = txWatcher
 	startBlock := _txWatcher.GetScanStartBlock()
 	if _lastScanedBlockNumber == 0 {
@@ -70,57 +74,135 @@ func Start(txWatcher TxWatcher) error {
 			_lastScanedBlockNumber = startBlock - 1
 		}
 	}
-	client, err := _txWatcher.GetEthClient()
+	clients, err := _txWatcher.GetEthClients()
 	if err != nil {
 		return err
 	}
 
-	cid, err := client.ChainID(context.Background())
+	cid, err := clients[0].ChainID(context.Background())
 	if err != nil {
 		return err
 	}
 	_chainID = cid
 	_signer = types.NewEIP155Signer(_chainID)
-	logMsg("chainID:" + _chainID.String() + ",scaning...")
+	logToConsole("chainID:" + _chainID.String() + ",scaning...")
 
-	client.Close()
+	for i := 0; i < len(clients); i++ {
+		clients[i].Close()
+	}
 
+	scanInterval := _txWatcher.GetScanInterval()
+	if scanInterval <= time.Millisecond {
+		scanInterval = 0
+	}
+	errCount := 0
 	for true {
-		err := scan(_lastScanedBlockNumber)
+		scanedBlock, err := scan(_lastScanedBlockNumber + 1)
 		if err != nil {
-			return err
+			if scanedBlock > 0 {
+				_lastScanedBlockNumber = scanedBlock
+			} else {
+				errCount++
+			}
+		} else {
+			errCount = 0
 		}
 
-		time.Sleep(1 * time.Second)
+		//如果连续报错达到10次，则线程睡眠10秒后继续
+		if errCount == 10 {
+			logToConsole("scaning block continuous error " + strconv.Itoa(errCount) + " times,sleep 30s...")
+			time.Sleep(30 * time.Second)
+			errCount = 0
+		}
+
+		if scanInterval > 0 {
+			time.Sleep(scanInterval)
+		}
 	}
 
 	return nil
 }
 
-func scan(startBlock uint64) error {
-	client, err := _txWatcher.GetEthClient()
+func scan(startBlock uint64) (uint64, error) {
+	clients, err := _txWatcher.GetEthClients()
 	if err != nil {
-		return err
+		return 0, err
 	}
-	defer client.Close()
 
-	maxBn, err := client.BlockNumber(context.Background())
-	if err != nil {
-		return err
+	for i := 0; i < len(clients); i++ {
+		defer clients[i].Close()
 	}
-	if maxBn == _lastScanedBlockNumber {
-		return nil
-	}
-	for _lastScanedBlockNumber < maxBn {
-		logMsg("scaning block " + strconv.FormatUint(_lastScanedBlockNumber, 10) + "...")
-		currBlock := _lastScanedBlockNumber
-		if _lastScanedBlockNumber > 0 {
-			currBlock += 1
+
+	var blockNumbers []uint64
+	var maxBlock uint64
+	msg := "scaning start block:" + strconv.FormatUint(startBlock, 10) + ","
+	errCount := 0
+	for i := 0; i < len(clients); i++ {
+		bn, err := clients[i].BlockNumber(context.Background())
+		if err == nil {
+			if bn > maxBlock {
+				maxBlock = bn
+			}
+			blockNumbers[i] = bn
+
+			msg += "client_" + strconv.Itoa(i) + " blockheight:" + strconv.FormatUint(bn, 10) + ",   "
+		} else {
+			errCount++
 		}
-		block, err := client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
+	}
+	if errCount == len(clients)-1 {
+		return 0, err
+	}
+
+	if maxBlock <= startBlock {
+		return 0, nil
+	}
+
+	var scanedBlock uint64 = 0
+	for i := startBlock; i <= maxBlock; i++ {
+		currBlock := i
+		logToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "...")
+		index := currBlock % uint64(len(clients))
+		client := clients[index]
+		var availableIndexes []int
+		var availableIndex int
+		if blockNumbers[index] < currBlock {
+			for i := 0; i < len(clients); i++ {
+				if currBlock <= blockNumbers[i] {
+					availableIndexes[len(availableIndexes)] = i
+				}
+			}
+
+			availableIndex := currBlock % uint64(len(availableIndexes))
+			client = clients[availableIndexes[availableIndex]]
+		}
+
+		var block *types.Block
+		block, err = client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
 		if err != nil {
-			return err
+			errCount = 0
+			var unavaiIndexes map[int]bool
+			unavaiIndexes[availableIndex] = false
+			for i := 0; i < len(availableIndexes); i++ {
+				if !unavaiIndexes[availableIndexes[i]] {
+					errCount++
+					continue
+				}
+
+				client = clients[availableIndexes[i]]
+				block, err = client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
+				if err != nil {
+					unavaiIndexes[availableIndexes[i]] = false
+					errCount++
+				} else {
+					break
+				}
+			}
+			if errCount == len(availableIndexes) {
+				return 0, err
+			}
 		}
+
 		blockUnixSecs := block.Time()
 		txs := block.Transactions()
 		for _, tx := range txs {
@@ -143,10 +225,10 @@ func scan(startBlock uint64) error {
 
 			fromAddr, err := _signer.Sender(tx)
 			if err != nil {
-				return err
+				return 0, err
 			}
-			from := hexutil.Encode(fromAddr.Bytes())
-			to := hexutil.Encode(tx.To().Bytes())
+			from := "0x" + strings.ToLower(hexutil.Encode(fromAddr.Bytes()))
+			to := "0x" + strings.ToLower(hexutil.Encode(tx.To().Bytes()))
 			methodId := ""
 			if txData != nil && len(txData) >= 4 {
 				methodId = hex.EncodeToString(txData[0:4])
@@ -155,7 +237,7 @@ func scan(startBlock uint64) error {
 				continue
 			}
 			txInfo := &TxInfo{
-				TxHash:        tx.Hash().Hex(),
+				TxHash:        "0x" + strings.ToLower(tx.Hash().Hex()),
 				From:          from,
 				Gas:           tx.Gas(),
 				GasPrice:      tx.GasPrice(),
@@ -177,7 +259,7 @@ func scan(startBlock uint64) error {
 
 			receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
 			if err != nil {
-				return err
+				return 0, err
 			}
 
 			txInfo.receipt = receipt
@@ -186,17 +268,17 @@ func scan(startBlock uint64) error {
 			txInfo.GasUsed = receipt.GasUsed
 			txInfo.CumulativeGasUsed = receipt.CumulativeGasUsed
 
-			logMsg("processing tx " + txInfo.TxHash + "...")
+			logToConsole("processing tx " + txInfo.TxHash + "...")
 			err = _txWatcher.Callback(txInfo)
 			if err != nil {
-				return err
+				return scanedBlock, err
 			}
 		}
 
-		_lastScanedBlockNumber = currBlock
+		scanedBlock = currBlock
 	}
 
-	return nil
+	return scanedBlock, nil
 }
 
 //获取tx logs
@@ -271,6 +353,6 @@ func (tx *TxInfo) JSON() string {
 	return sb.String()
 }
 
-func logMsg(msg string) {
-	fmt.Println(time.Now().UTC().Add(time.Hour*8).Format("2006-01-02 15:04:05") + " " + msg)
+func logToConsole(msg string) {
+	fmt.Println(time.Now().Add(8*time.Hour).Format("2006-01-02 15:04:05") + "  " + msg)
 }
