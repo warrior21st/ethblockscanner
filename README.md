@@ -9,6 +9,8 @@
 	endpoints:=[]string{ "https://mainnet.infura.io/v3/[your infura project 1 ID]", "https://mainnet.infura.io/v3/[your infura project 2 ID]",...}
 	secrets:=[]string{ "[your infura project 1 secret]", "[your infura project 2 secret]",...}
 	interval := 1 * time.Second
+	
+	//txscanner
 	txWatcher := txscanner.NewSimpleTxWatcher(endpoints, 12400770, interval, func(tx *txscanner.TxInfo) error {
 		transferMethodID := hex.EncodeToString(crypto.Keccak256([]byte("transfer(address,uint256)"))[:4])
 		if tx.CallMethodID != transferMethodID {
@@ -45,13 +47,9 @@
 
 	txWatcher.SetInfuraSecrets(secrets)
 	txWatcher.AddInterestedTo(usdtAddr)
-
 	txscanner.StartScanTx(txWatcher)
-
-### txslogscanner sample
-	usdtAddr := "0xdac17f958d2ee523a2206206994597c13d831ec7"
-	endpoints, secrets := getInfuraEndpoints()
-	interval := 3 * time.Second
+	
+	//txlogscanner
 	watcher := txlogscanner.NewSimpleTxLogWatcher(endpoints, 12400629, interval, func(log *types.Log) error {
 
 		var transferEvent struct {
@@ -77,6 +75,5 @@
 
 	watcher.SetInfuraSecrets(secrets)
 	watcher.AddInterestedParams(usdtAddr, "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
-
 	txlogscanner.StartScanTxLogs(watcher)
 
