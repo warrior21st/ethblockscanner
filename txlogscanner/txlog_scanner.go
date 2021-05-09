@@ -134,6 +134,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 			}
 
 			if logs == nil || len(logs) == 0 {
+				LogToConsole("block " + strconv.FormatUint(currBlock, 10) + " is not mined or not synced on client_" + strconv.Itoa(index) + ".")
 				break
 			}
 
