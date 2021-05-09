@@ -1,8 +1,8 @@
 # ethereum block scanner
 ### pkg
     import (
-		"github.com/warrior21st/ethtxscanner/txlogscanner"
-		"github.com/warrior21st/ethtxscanner/txscanner"
+		"github.com/warrior21st/ethblockscanner/txlogscanner"
+		"github.com/warrior21st/ethblockscanner/txscanner"
 	)
 ### txscanner sample
 	usdtAddr := "0xdac17f958d2ee523a2206206994597c13d831ec7"
