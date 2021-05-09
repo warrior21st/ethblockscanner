@@ -44,6 +44,7 @@ type TxlogWatcher interface {
 func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 	LogToConsole("eth tx log scanner starting...")
 	_txlogWatcher = txlogWatcher
+	_clientSleepTimes = make(map[int]int64)
 	startBlock := _txlogWatcher.GetScanStartBlock()
 	if _lastScanedBlockNumber == 0 {
 		if startBlock > 0 {
@@ -130,7 +131,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 			//filter.BlockHash = &currBlockHash
 			logs, err := client.FilterLogs(context.Background(), filter)
 			if err != nil {
-				_clientSleepTimes[index] = time.Now().UTC().Unix() + 10
+				_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
 				LogToConsole("client_" + strconv.Itoa(index) + "response error,sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
 				continue
 			}

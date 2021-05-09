@@ -69,6 +69,7 @@ var (
 func StartScanTx(txWatcher TxWatcher) error {
 	LogToConsole("eth tx scanner starting...")
 	_txWatcher = txWatcher
+	_clientSleepTimes = make(map[int]int64)
 	startBlock := _txWatcher.GetScanStartBlock()
 	if _lastScanedBlockNumber == 0 {
 		if startBlock > 0 {
