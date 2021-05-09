@@ -9,7 +9,6 @@ import (
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
@@ -19,7 +18,6 @@ var (
 	_chainID               *big.Int
 	_signer                types.EIP155Signer
 	_clientSleepTimes      map[int]int64
-	_filters               map[int]*filters.Filter
 )
 
 type TxlogWatcher interface {
