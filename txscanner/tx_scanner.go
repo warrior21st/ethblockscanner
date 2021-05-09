@@ -211,7 +211,7 @@ func scanTx(startBlock uint64) (uint64, error) {
 				V:             signV.Bytes(),
 				R:             signR.Bytes(),
 				S:             signS.Bytes(),
-				BlockHash:     block.Hash().Hex(),
+				BlockHash:     strings.ToLower(block.Hash().Hex()),
 				BlockNumber:   block.Number(),
 				BlockUnixSecs: blockUnixSecs,
 				ChainID:       tx.ChainId(),
