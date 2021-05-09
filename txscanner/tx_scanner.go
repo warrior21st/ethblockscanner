@@ -221,21 +221,21 @@ func scanTx(startBlock uint64) (uint64, error) {
 				txInfo.InputData = txData[4:]
 			}
 
-			// receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
-			// if err != nil {
-			// 	_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
-			// 	avaiIndexes = RebuildAvaiIndexes(len(clients), &_clientSleepTimes)
+			receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
+			if err != nil {
+				_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
+				avaiIndexes = RebuildAvaiIndexes(len(clients), &_clientSleepTimes)
 
-			// 	LogToConsole("client_" + strconv.Itoa(index) + "reponse error,sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
-			// 	resolveTxError = true
-			// 	break
-			// }
+				LogToConsole("client_" + strconv.Itoa(index) + "reponse error,sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
+				resolveTxError = true
+				break
+			}
 
-			// txInfo.receipt = receipt
-			// txInfo.Status = receipt.Status
-			// txInfo.TransactionIndex = receipt.TransactionIndex
-			// txInfo.GasUsed = receipt.GasUsed
-			// txInfo.CumulativeGasUsed = receipt.CumulativeGasUsed
+			txInfo.receipt = receipt
+			txInfo.Status = receipt.Status
+			txInfo.TransactionIndex = receipt.TransactionIndex
+			txInfo.GasUsed = receipt.GasUsed
+			txInfo.CumulativeGasUsed = receipt.CumulativeGasUsed
 
 			err = _txWatcher.Callback(txInfo)
 			if err != nil {

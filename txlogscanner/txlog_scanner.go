@@ -140,7 +140,10 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 
 		for _, log := range logs {
 			if _txlogWatcher.IsInterestedLog(log.Address.Hex(), log.Topics[0].Hex()) {
-				_txlogWatcher.Callback(&log)
+				err = _txlogWatcher.Callback(&log)
+				if err != nil {
+					return finisedMaxBlock, err
+				}
 			}
 		}
 
