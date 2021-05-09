@@ -133,7 +133,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 				continue
 			}
 
-			if logs == nil {
+			if logs == nil || len(logs) == 0 {
 				break
 			}
 
