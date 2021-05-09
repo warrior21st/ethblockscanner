@@ -1,4 +1,4 @@
-module github.com/warrior21st/ethtxscanner
+module github.com/warrior21st/ethblockscanner
 
 go 1.14
 

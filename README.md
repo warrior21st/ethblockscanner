@@ -1,4 +1,4 @@
-# ethereum block transactions scanner
+# ethereum block scanner
 ### pkg
     import (
 		"github.com/warrior21st/ethtxscanner/txlogscanner"
