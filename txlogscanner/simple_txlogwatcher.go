@@ -21,7 +21,7 @@ type SimpleTxLogWatcher struct {
 }
 
 //构造一个新的简单tx管理结构(默认3秒钟扫描一次)
-func NewSimpleTxWatcher(endpoints []string, scanStartBlock uint64, scanInterval time.Duration, callback func(*types.Log) error) *SimpleTxLogWatcher {
+func NewSimpleTxLogWatcher(endpoints []string, scanStartBlock uint64, scanInterval time.Duration, callback func(*types.Log) error) *SimpleTxLogWatcher {
 
 	return &SimpleTxLogWatcher{
 		endpoints:      endpoints,
