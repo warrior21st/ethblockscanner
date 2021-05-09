@@ -65,7 +65,7 @@ func (watcher *SimpleTxLogWatcher) GetEthClients() ([]*ethclient.Client, error) 
 	return clients, nil
 }
 
-func (watcher *SimpleTxLogWatcher) IsInterestedTx(addr string, topic0 string) bool {
+func (watcher *SimpleTxLogWatcher) IsInterestedLog(addr string, topic0 string) bool {
 
 	return watcher.interestedLogs[strings.ToLower(addr+"_"+topic0)] != nil
 }
