@@ -1,6 +1,9 @@
 # ethereum block transactions scanner
 ### pkg
-    import "github.com/warrior21st/ethtxscanner"
+    import (
+		"github.com/warrior21st/ethtxscanner/txlogscanner"
+		"github.com/warrior21st/ethtxscanner/txscanner"
+	)
 ### txscanner sample
 	usdtAddr := "0xdac17f958d2ee523a2206206994597c13d831ec7"
 	endpoints:=[]string{ "https://mainnet.infura.io/v3/[your infura project 1 ID]", "https://mainnet.infura.io/v3/[your infura project 2 ID]",...}
