@@ -34,7 +34,7 @@ type TxlogWatcher interface {
 	IsInterestedLog(address string, topic0 string) bool
 
 	//tx log回调处理方法
-	Callback(txlogs []*types.Log) error
+	Callback(txlog *types.Log) error
 
 	//获取扫描间隔
 	GetScanInterval() time.Duration
