@@ -107,6 +107,7 @@ func StartScanTx(txWatcher TxWatcher) error {
 				errCount++
 			}
 		} else {
+			_lastScanedBlockNumber = scanedBlock
 			errCount = 0
 		}
 

@@ -81,6 +81,7 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 				errCount++
 			}
 		} else {
+			_lastScanedBlockNumber = scanedBlock
 			errCount = 0
 		}
 
