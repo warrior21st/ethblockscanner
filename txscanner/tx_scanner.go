@@ -149,7 +149,11 @@ func scanTx(startBlock uint64) (uint64, error) {
 		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + " txs on client_" + strconv.Itoa(index) + "...")
 
 		block, err := client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
-		if err != nil && err.Error() != "not found" {
+		if err != nil {
+			if err.Error() == "not found" {
+				LogToConsole("block " + strconv.FormatUint(currBlock, 10) + " is not mined or not synced  client_" + strconv.Itoa(index) + ".")
+				break
+			}
 			_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
 			avaiIndexes = RebuildAvaiIndexes(len(clients), &_clientSleepTimes)
 
