@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum"
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/eth/filters"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -113,10 +112,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 	errorSleepSeconds := int64(10)
 	currBlock := startBlock
 	finisedMaxBlock := startBlock - 1
-	currBlockHash := common.BytesToHash(new(big.Int).SetUint64(currBlock).Bytes())
-	filter := ethereum.FilterQuery{
-		BlockHash: &currBlockHash,
-	}
+	filter := ethereum.FilterQuery{}
 	for true {
 		avaiIndexes := RebuildAvaiIndexes(len(clients), &_clientSleepTimes)
 		if len(avaiIndexes) == 0 {
@@ -127,7 +123,8 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 			client := clients[index]
 			LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "tx logs on client_" + strconv.Itoa(index) + "...")
 
-			currBlockHash = common.BytesToHash(new(big.Int).SetUint64(currBlock).Bytes())
+			filter.FromBlock = new(big.Int).SetUint64(currBlock)
+			filter.ToBlock = new(big.Int).SetUint64(currBlock)
 			//filter.BlockHash = &currBlockHash
 			logs, err := client.FilterLogs(context.Background(), filter)
 			if err != nil {
