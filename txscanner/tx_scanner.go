@@ -146,7 +146,7 @@ func scanTx(startBlock uint64) (uint64, error) {
 
 		index := avaiIndexes[currBlock%uint64(len(avaiIndexes))]
 		client := clients[index]
-		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "txs on client_" + strconv.Itoa(index) + "...")
+		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + " txs on client_" + strconv.Itoa(index) + "...")
 
 		block, err := client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
 		if err != nil {
