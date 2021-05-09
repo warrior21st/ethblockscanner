@@ -112,7 +112,10 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 	errorSleepSeconds := int64(10)
 	currBlock := startBlock
 	finisedMaxBlock := startBlock - 1
-	filter := ethereum.FilterQuery{}
+	currBlockHash := ""
+	filter := ethereum.FilterQuery{
+		filter.BlockHash: &currBlockHash,
+	}
 	for true {
 		avaiIndexes := RebuildAvaiIndexes(len(clients), &_clientSleepTimes)
 		if len(avaiIndexes) == 0 {
@@ -121,9 +124,10 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		for len(avaiIndexes) > 0 {
 			index := avaiIndexes[currBlock%uint64(len(avaiIndexes))]
 			client := clients[index]
-			LogToConsole("scaning block " + strconv.FormatUint(currBlock) + "tx logs on client_" + strconv.Itoa(index) + "...")
+			LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "tx logs on client_" + strconv.Itoa(index) + "...")
 
-			filter.BlockHash = &common.BytesToHash(new(big.Int).SetUint64(currBlock).Bytes())
+			currBlockHash = common.BytesToHash(new(big.Int).SetUint64(currBlock).Bytes())
+			//filter.BlockHash = &currBlockHash
 			logs, err := client.FilterLogs(context.Background(), filter)
 			if err != nil {
 				_clientSleepTimes[index] = time.Now().UTC().Unix() + 10
@@ -137,7 +141,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 
 			for _, log := range logs {
 				if _txlogWatcher.IsInterestedLog(log.Address.Hex(), log.Topics[0].Hex()) {
-					_txlogWatcher.Callback(log)
+					_txlogWatcher.Callback(*log)
 				}
 			}
 
