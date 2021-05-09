@@ -36,7 +36,7 @@ func (watcher *SimpleTxLogWatcher) SetInfuraSecrets(secrets []string) {
 }
 
 //添加关注的from address
-func (watcher *SimpleTxLogWatcher) AddInterestedLog(address string, topic0 string) {
+func (watcher *SimpleTxLogWatcher) AddInterestedParams(address string, topic0 string) {
 	if watcher.interestedLogs == nil {
 		watcher.interestedLogs = make(map[string]interface{})
 	}
