@@ -1,4 +1,4 @@
-package ethtxscanner
+package txscanner
 
 import (
 	"encoding/base64"

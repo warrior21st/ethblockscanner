@@ -1,4 +1,4 @@
-package ethtxscanner
+package txlogscanner
 
 import (
 	"encoding/base64"
