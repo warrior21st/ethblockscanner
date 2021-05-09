@@ -18,7 +18,7 @@ var (
 	_lastScanedBlockNumber uint64 = 0
 	_chainID               *big.Int
 	_signer                types.EIP155Signer
-	_clientSleepTimes      map[int]uint64
+	_clientSleepTimes      map[int]int64
 	_filters               map[int]*filters.Filter
 )
 
@@ -108,7 +108,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		defer clients[i].Close()
 	}
 
-	errorSleepSeconds := 10
+	errorSleepSeconds := int64(10)
 	currBlock := startBlock
 	finisedMaxBlock := startBlock - 1
 	filter := ethereum.FilterQuery{}
@@ -120,13 +120,13 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		for len(avaiIndexes) > 0 {
 			index := avaiIndexes[currBlock%uint64(len(avaiIndexes))]
 			client := clients[index]
-			LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "tx logs on client_" + strconv.Itoa(index, 10) + "...")
+			LogToConsole("scaning block " + strconv.FormatUint(currBlock) + "tx logs on client_" + strconv.Itoa(index) + "...")
 
-			filter.BlockHash = common.BytesToHash(new(big.Int).SetUint64(currBlock))
+			filter.BlockHash = &common.BytesToHash(new(big.Int).SetUint64(currBlock).Bytes())
 			logs, err := client.FilterLogs(context.Background(), filter)
 			if err != nil {
 				_clientSleepTimes[index] = time.Now().UTC().Unix() + 10
-				LogToConsole("client_" + strconv.Itoa(index, 10) + "response error,sleep " + strconv.Itoa(errorSleepSeconds) + "s.")
+				LogToConsole("client_" + strconv.Itoa(index) + "response error,sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
 				continue
 			}
 
