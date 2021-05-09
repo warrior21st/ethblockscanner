@@ -3,7 +3,6 @@ package ethtxscanner
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"math/big"
 	"strconv"
 	"strings"
@@ -62,11 +61,12 @@ var (
 	_lastScanedBlockNumber uint64 = 0
 	_chainID               *big.Int
 	_signer                types.EIP155Signer
+	_clientSleepTimes      map[int]int64
 )
 
 //开始扫描
-func Start(txWatcher TxWatcher) error {
-	logToConsole("eth tx scanner starting...")
+func StartScanTx(txWatcher TxWatcher) error {
+	LogToConsole("eth tx scanner starting...")
 	_txWatcher = txWatcher
 	startBlock := _txWatcher.GetScanStartBlock()
 	if _lastScanedBlockNumber == 0 {
@@ -85,7 +85,7 @@ func Start(txWatcher TxWatcher) error {
 	}
 	_chainID = cid
 	_signer = types.NewEIP155Signer(_chainID)
-	logToConsole("chainID:" + _chainID.String() + ",scaning...")
+	LogToConsole("chainID:" + _chainID.String() + ",scaning...")
 
 	for i := 0; i < len(clients); i++ {
 		clients[i].Close()
@@ -97,7 +97,7 @@ func Start(txWatcher TxWatcher) error {
 	}
 	errCount := 0
 	for true {
-		scanedBlock, err := scan(_lastScanedBlockNumber + 1)
+		scanedBlock, err := scanTx(_lastScanedBlockNumber + 1)
 		if err != nil {
 			if scanedBlock > 0 {
 				_lastScanedBlockNumber = scanedBlock
@@ -110,7 +110,7 @@ func Start(txWatcher TxWatcher) error {
 
 		//如果连续报错达到10次，则线程睡眠10秒后继续
 		if errCount == 10 {
-			logToConsole("scaning block continuous error " + strconv.Itoa(errCount) + " times,sleep 30s...")
+			LogToConsole("scaning block continuous error " + strconv.Itoa(errCount) + " times,sleep 30s...")
 			time.Sleep(30 * time.Second)
 			errCount = 0
 		}
@@ -123,7 +123,7 @@ func Start(txWatcher TxWatcher) error {
 	return nil
 }
 
-func scan(startBlock uint64) (uint64, error) {
+func scanTx(startBlock uint64) (uint64, error) {
 	clients, err := _txWatcher.GetEthClients()
 	if err != nil {
 		return 0, err
@@ -133,79 +133,35 @@ func scan(startBlock uint64) (uint64, error) {
 		defer clients[i].Close()
 	}
 
-	blockNumbers := make([]uint64, len(clients))
-	var maxBlock uint64
-	blockHeightsMsg := "scaning start block:" + strconv.FormatUint(startBlock, 10) + ","
-	errCount := 0
-	for i := 0; i < len(clients); i++ {
-		bn, err := clients[i].BlockNumber(context.Background())
-		if err == nil {
-			if bn > maxBlock {
-				maxBlock = bn
-			}
-			blockNumbers[i] = bn
-
-			blockHeightsMsg += "client_" + strconv.Itoa(i) + " blockheight:" + strconv.FormatUint(bn, 10) + ",   "
-		} else {
-			blockHeightsMsg += "client_" + strconv.Itoa(i) + " get blockheight error,"
-			errCount++
+	errorSleepSeconds := int64(10)
+	currBlock := startBlock
+	finishedBlock := startBlock - 1
+	for true {
+		avaiIndexes := RebuildAvaiIndexes(len(clients), &_clientSleepTimes)
+		if len(avaiIndexes) == 0 {
+			break
 		}
-	}
-	logToConsole(strings.Trim(blockHeightsMsg, ",") + ".")
 
-	if errCount == len(clients)-1 {
-		return 0, err
-	}
+		index := avaiIndexes[currBlock%uint64(len(avaiIndexes))]
+		client := clients[index]
+		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "txs on client_" + strconv.Itoa(index) + "...")
 
-	if maxBlock <= startBlock {
-		return 0, nil
-	}
+		block, err := client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
+		if err != nil {
+			_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
+			avaiIndexes = RebuildAvaiIndexes(len(clients), &_clientSleepTimes)
 
-	scanedMaxBlock := uint64(0)
-	for i := startBlock; i <= maxBlock; i++ {
-		currBlock := i
-		logToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "...")
-		var availableIndexes []int
-		var willUseAvaiIndex int
-		for i := 0; i < len(clients); i++ {
-			if currBlock <= blockNumbers[i] {
-				availableIndexes = append(availableIndexes, i)
-			}
+			LogToConsole("client_" + strconv.Itoa(index) + "response error,sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
+			continue
 		}
-		willUseAvaiIndex = int(currBlock % uint64(len(availableIndexes)))
 
-		var client *ethclient.Client
-		var block *types.Block
-		errCount = 0
-		unavaiIndexes := make(map[int]bool)
-		tempIndex := willUseAvaiIndex
-		for true {
-			if unavaiIndexes[tempIndex] {
-				continue
-			}
-
-			client = clients[availableIndexes[tempIndex]]
-			block, err = client.BlockByNumber(context.Background(), new(big.Int).SetUint64(currBlock))
-			if err != nil {
-				errCount++
-				unavaiIndexes[tempIndex] = true
-			} else {
-				break
-			}
-
-			if errCount == len(availableIndexes) {
-				return 0, err
-			}
-
-			if tempIndex == len(availableIndexes)-1 {
-				tempIndex = 0
-			} else {
-				tempIndex++
-			}
+		if block == nil {
+			break
 		}
 
 		blockUnixSecs := block.Time()
 		txs := block.Transactions()
+		resolveTxError := false
 		for _, tx := range txs {
 			//skip contract creation tx
 			if tx.To() == nil {
@@ -260,7 +216,12 @@ func scan(startBlock uint64) (uint64, error) {
 
 			receipt, err := client.TransactionReceipt(context.Background(), tx.Hash())
 			if err != nil {
-				return 0, err
+				_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
+				avaiIndexes = RebuildAvaiIndexes(len(clients), &_clientSleepTimes)
+
+				LogToConsole("client_" + strconv.Itoa(index) + "reponse error,sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
+				resolveTxError = true
+				break
 			}
 
 			txInfo.receipt = receipt
@@ -269,17 +230,20 @@ func scan(startBlock uint64) (uint64, error) {
 			txInfo.GasUsed = receipt.GasUsed
 			txInfo.CumulativeGasUsed = receipt.CumulativeGasUsed
 
-			logToConsole("processing tx " + txInfo.TxHash + "...")
+			LogToConsole("processing tx " + txInfo.TxHash + "...")
 			err = _txWatcher.Callback(txInfo)
 			if err != nil {
-				return scanedMaxBlock, err
+				return finishedBlock, err
 			}
 		}
 
-		scanedMaxBlock = currBlock
+		if !resolveTxError {
+			finishedBlock = currBlock
+			currBlock++
+		}
 	}
 
-	return scanedMaxBlock, nil
+	return finishedBlock, nil
 }
 
 //获取tx logs
@@ -352,8 +316,4 @@ func (tx *TxInfo) JSON() string {
 	sb.WriteString(`}`)
 
 	return sb.String()
-}
-
-func logToConsole(msg string) {
-	fmt.Println(time.Now().Add(8*time.Hour).Format("2006-01-02 15:04:05") + "  " + msg)
 }
