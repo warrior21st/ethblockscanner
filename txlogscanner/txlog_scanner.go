@@ -118,35 +118,33 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		if len(avaiIndexes) == 0 {
 			break
 		}
-		for len(avaiIndexes) > 0 {
-			index := avaiIndexes[currBlock%uint64(len(avaiIndexes))]
-			client := clients[index]
-			LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + " tx logs on client_" + strconv.Itoa(index) + "...")
+		index := avaiIndexes[currBlock%uint64(len(avaiIndexes))]
+		client := clients[index]
+		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + " tx logs on client_" + strconv.Itoa(index) + "...")
 
-			filter.FromBlock = new(big.Int).SetUint64(currBlock)
-			filter.ToBlock = new(big.Int).SetUint64(currBlock)
-			//filter.BlockHash = &currBlockHash
-			logs, err := client.FilterLogs(context.Background(), filter)
-			if err != nil {
-				_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
-				LogToConsole("client_" + strconv.Itoa(index) + "response error,sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
-				continue
-			}
-
-			if logs == nil || len(logs) == 0 {
-				LogToConsole("block " + strconv.FormatUint(currBlock, 10) + " is not mined or not synced on client_" + strconv.Itoa(index) + ".")
-				break
-			}
-
-			for _, log := range logs {
-				if _txlogWatcher.IsInterestedLog(log.Address.Hex(), log.Topics[0].Hex()) {
-					_txlogWatcher.Callback(&log)
-				}
-			}
-
-			finisedMaxBlock = currBlock
-			currBlock++
+		filter.FromBlock = new(big.Int).SetUint64(currBlock)
+		filter.ToBlock = new(big.Int).SetUint64(currBlock)
+		//filter.BlockHash = &currBlockHash
+		logs, err := client.FilterLogs(context.Background(), filter)
+		if err != nil {
+			_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
+			LogToConsole("client_" + strconv.Itoa(index) + "response error,sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
+			continue
 		}
+
+		if logs == nil || len(logs) == 0 {
+			LogToConsole("block " + strconv.FormatUint(currBlock, 10) + " is not mined or not synced on client_" + strconv.Itoa(index) + ".")
+			break
+		}
+
+		for _, log := range logs {
+			if _txlogWatcher.IsInterestedLog(log.Address.Hex(), log.Topics[0].Hex()) {
+				_txlogWatcher.Callback(&log)
+			}
+		}
+
+		finisedMaxBlock = currBlock
+		currBlock++
 	}
 
 	return finisedMaxBlock, nil
