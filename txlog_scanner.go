@@ -1,4 +1,4 @@
-// package ethtxscanner
+package ethtxscanner
 
 // import (
 // 	"context"
