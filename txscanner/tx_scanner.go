@@ -168,6 +168,9 @@ func scanTx(startBlock uint64) (uint64, error) {
 
 		blockUnixSecs := block.Time()
 		txs := block.Transactions()
+		if txs==nil ||len(txs)==0{
+			continue
+		}
 		resolveTxError := false
 		for _, tx := range txs {
 			//skip contract creation tx
