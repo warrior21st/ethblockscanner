@@ -15,7 +15,7 @@ import (
 var (
 	_txlogWatcher          TxlogWatcher
 	_lastScanedBlockNumber uint64 = 0
-	_lastBlockForwardTime uint64 = 0
+	_lastBlockForwardTime int64 = 0
 	_chainID               *big.Int
 	_signer                types.EIP155Signer
 	_clientSleepTimes      map[int]int64
