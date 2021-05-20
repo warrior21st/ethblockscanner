@@ -144,7 +144,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 
 		if logs == nil || len(logs) == 0 {
 			blockNotMined:=true
-			if time.Now().Unix() - _lastBlockForwardTime>=20{
+			if time.Now().Unix() - _lastBlockForwardTime>=10{
 				blockNumber,err:=client.BlockNumber(context.Background())
 				if err!=nil{
 					_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
