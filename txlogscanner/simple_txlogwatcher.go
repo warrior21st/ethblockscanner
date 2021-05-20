@@ -46,10 +46,10 @@ func (watcher *SimpleTxLogWatcher) AddInterestedParams(address string, topic0 st
 	}
 	watcher.interestedLogs[strings.ToLower(address+"_"+topic0)] = true
 
-	if watcher.interestedLogAddresses==nil {
-		watcher.interestedAddresses=make([]string,1)
+	if watcher.interestedAddresses==nil {
+		watcher.interestedAddresses=make([]common.Address,1)
 	}
-	watcher.interestedAddresses=append(watcher.interestedAddresses,address...)
+	watcher.interestedAddresses=append(watcher.interestedAddresses,common.HexToAddress(address)...)
 }
 
 func (watcher *SimpleTxLogWatcher) GetInterestedAddresses() []common.Address {
