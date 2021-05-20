@@ -178,7 +178,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 			finisedMaxBlock=logs[len(logs)-1].BlockNumber
 		}
 		_lastBlockForwardTime = time.Now().Unix()
-		currBlock+=perScanBlock+1
+		currBlock=finisedMaxBlock+1
 	}
 
 	return finisedMaxBlock, nil
