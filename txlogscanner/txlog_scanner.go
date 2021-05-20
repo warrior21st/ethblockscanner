@@ -133,7 +133,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		}
 
 		if logs == nil || len(logs) == 0 {
-			blockNotMined:=false
+			blockNotMined:=true
 			if time.Now().Unix() - _lastBlockForwardTime>=20{
 				blockNumber,err:=client.BlockNumber(context.Background())
 				if err!=nil{
