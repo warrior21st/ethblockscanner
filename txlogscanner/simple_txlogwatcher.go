@@ -91,6 +91,6 @@ func (watcher *SimpleTxLogWatcher) GetPerScanBlockCount() uint64 {
 	return watcher.perScanBlockCount
 }
 
-func (watcher *SimpleTxLogWatcher) SetPerScanBlockCount(uint64 perScanBlockCount){
+func (watcher *SimpleTxLogWatcher) SetPerScanBlockCount(perScanBlockCount uint64){
 	watcher.perScanBlockCount=perScanBlockCount
 }
