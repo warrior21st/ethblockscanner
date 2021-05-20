@@ -155,6 +155,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 			}
 		}
 
+		logBlock:=uint64(0)
 		for _, log := range logs {
 			if _txlogWatcher.IsInterestedLog(log.Address.Hex(), log.Topics[0].Hex()) {
 				err = _txlogWatcher.Callback(&log)
@@ -162,10 +163,21 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 					return finisedMaxBlock, err
 				}
 			}
+
+			if logBlock==0{
+				logBlock=log.BlockNumber
+			}else{
+				if logBlock=log.BlockNumber-1{
+					finisedMaxBlock=logBlock
+					logBlock=log.BlockNumber
+				}
+			}
 		}
 
+		if logs!=nil && len(logs)>0{
+			finisedMaxBlock=logs[len(logs)-1].BlockNumber
+		}
 		_lastBlockForwardTime = time.Now().Unix()
-		finisedMaxBlock = currBlock+perScanBlock
 		currBlock+=perScanBlock+1
 	}
 
