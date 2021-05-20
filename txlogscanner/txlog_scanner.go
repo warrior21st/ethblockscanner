@@ -28,6 +28,9 @@ type TxlogWatcher interface {
 	//获取节点地址
 	GetEthClients() ([]*ethclient.Client, error)
 
+	//获取单次扫描区块数
+	GetPerScanBlockCount() uint64
+
 	//是否是需要解析的tx
 	IsInterestedLog(address string, topic0 string) bool
 
@@ -110,7 +113,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 	}
 
 	errorSleepSeconds := int64(10)
-	perScanBlock:=uint64(9)
+	perScanBlock:=_txlogWatcher.GetPerScanBlockCount()
 	currBlock := startBlock
 	finisedMaxBlock := startBlock - 1
 	filter := ethereum.FilterQuery{}

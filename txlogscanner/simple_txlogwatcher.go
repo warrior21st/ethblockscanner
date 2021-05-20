@@ -14,6 +14,7 @@ import (
 type SimpleTxLogWatcher struct {
 	endpoints      []string
 	infuraSecrets  []string
+	perScanBlockCount uint64
 	scanStartBlock uint64
 	interestedLogs map[string]interface{}
 	scanInterval   time.Duration
@@ -28,6 +29,7 @@ func NewSimpleTxLogWatcher(endpoints []string, scanStartBlock uint64, scanInterv
 		scanStartBlock: scanStartBlock,
 		scanInterval:   scanInterval,
 		callback:       callback,
+		perScanBlockCount:1
 	}
 }
 
@@ -83,4 +85,12 @@ func (watcher *SimpleTxLogWatcher) GetScanInterval() time.Duration {
 //设置区块扫描间隔
 func (watcher *SimpleTxLogWatcher) SetScanInterval(interval time.Duration) {
 	watcher.scanInterval = interval
+}
+
+func (watcher *SimpleTxLogWatcher) GetPerScanBlockCount() uint64{
+	return watcher.perScanBlockCount
+}
+
+func (watcher *SimpleTxLogWatcher) SetPerScanBlockCount(uint64 perScanBlockCount){
+	watcher.perScanBlockCount=c
 }
