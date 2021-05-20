@@ -152,6 +152,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 					continue
 				}
 
+				LogToConsole("client_"+ strconv.Itoa(index) +"'s current blockheight: "+strconv.FormatUint(blockNumber, 10)+".")
 				blockNotMined=blockNumber < currBlock
 			}
 
