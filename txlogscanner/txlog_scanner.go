@@ -15,6 +15,7 @@ import (
 var (
 	_txlogWatcher          TxlogWatcher
 	_lastScanedBlockNumber uint64 = 0
+	_lastBlockForwardTime uint64 = 0
 	_chainID               *big.Int
 	_signer                types.EIP155Signer
 	_clientSleepTimes      map[int]int64
@@ -70,7 +71,7 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 		scanInterval = 0
 	}
 	errCount := 0
-	for true {
+	for true {		
 		scanedBlock, err := scanTxLogs(_lastScanedBlockNumber + 1)
 		if err != nil {
 			if scanedBlock > 0 {
@@ -132,8 +133,26 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		}
 
 		if logs == nil || len(logs) == 0 {
-			LogToConsole("block " + strconv.FormatUint(currBlock, 10) + " is not mined or not synced on client_" + strconv.Itoa(index) + ".")
-			break
+			blockNotMined:=false
+			if time.Now().Unix() - _lastBlockForwardTime>=20{
+				blockNumber,err:=client.BlockNumber(context.Background())
+				if err!=nil{
+					_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
+					LogToConsole("client_" + strconv.Itoa(index) + "response error,sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
+					continue
+				}
+
+				blockNotMined=blockNumber < currBlock
+			}else{
+
+			}
+			if(blockNotMined){
+				LogToConsole("block " + strconv.FormatUint(currBlock, 10) + " is not mined or not synced on client_" + strconv.Itoa(index) + ".")
+				break
+			}else{
+				currBlock++
+				continue
+			}
 		}
 
 		for _, log := range logs {
@@ -145,6 +164,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 			}
 		}
 
+		_lastBlockForwardTime = time.Now().Unix()
 		finisedMaxBlock = currBlock
 		currBlock++
 	}
