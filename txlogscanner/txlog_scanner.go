@@ -110,7 +110,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 	}
 
 	errorSleepSeconds := int64(10)
-	perScanBlock:=uint64(10)
+	perScanBlock:=uint64(9)
 	currBlock := startBlock
 	finisedMaxBlock := startBlock - 1
 	filter := ethereum.FilterQuery{}
