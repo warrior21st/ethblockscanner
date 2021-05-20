@@ -164,12 +164,13 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 				}
 			}
 
+			tempBn:=log.BlockNumber()
 			if logBlock==0{
-				logBlock=log.BlockNumber
+				logBlock=tempBn
 			}else{
-				if logBlock=log.BlockNumber-1{
+				if logBlock=tempBn-1{
 					finisedMaxBlock=logBlock
-					logBlock=log.BlockNumber
+					logBlock=tempBn
 				}
 			}
 		}
