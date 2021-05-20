@@ -8,6 +8,7 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 //简单交易管理结构
@@ -17,6 +18,7 @@ type SimpleTxLogWatcher struct {
 	perScanBlockCount uint64
 	scanStartBlock uint64
 	interestedLogs map[string]interface{}
+	interestedAddresses []common.Address
 	scanInterval   time.Duration
 	callback       func(*types.Log) error
 }
@@ -43,6 +45,15 @@ func (watcher *SimpleTxLogWatcher) AddInterestedParams(address string, topic0 st
 		watcher.interestedLogs = make(map[string]interface{})
 	}
 	watcher.interestedLogs[strings.ToLower(address+"_"+topic0)] = true
+
+	if watcher.interestedLogAddresses==nil {
+		watcher.interestedAddresses=make([]string,1)
+	}
+	watcher.interestedAddresses=append(watcher.interestedAddresses,address...)
+}
+
+func (watcher *SimpleTxLogWatcher) GetInterestedAddresses() []common.Address {
+	return watcher.interestedAddresses
 }
 
 func (watcher *SimpleTxLogWatcher) GetScanStartBlock() uint64 {

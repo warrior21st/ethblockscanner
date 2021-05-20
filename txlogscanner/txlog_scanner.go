@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/common"
 )
 
 var (
@@ -30,6 +31,8 @@ type TxlogWatcher interface {
 
 	//获取单次扫描区块数
 	GetPerScanBlockCount() uint64
+
+	GetInterestedAddresses() []common.Address
 
 	//是否是需要解析的tx
 	IsInterestedLog(address string, topic0 string) bool
@@ -116,7 +119,10 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 	perScanIncrment:=_txlogWatcher.GetPerScanBlockCount()-1
 	currBlock := startBlock
 	finisedMaxBlock := startBlock - 1
-	filter := ethereum.FilterQuery{}
+	filter := ethereum.FilterQuery{
+		Addresses:watcher.GetInterestedAddresses(),
+	}
+	
 	for true {
 		avaiIndexes := RebuildAvaiIndexes(len(clients), &_clientSleepTimes)
 		if len(avaiIndexes) == 0 {
