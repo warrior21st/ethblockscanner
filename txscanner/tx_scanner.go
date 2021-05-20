@@ -169,6 +169,8 @@ func scanTx(startBlock uint64) (uint64, error) {
 		blockUnixSecs := block.Time()
 		txs := block.Transactions()
 		if txs==nil ||len(txs)==0{
+			finishedBlock = currBlock
+			currBlock++
 			continue
 		}
 		resolveTxError := false
