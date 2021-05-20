@@ -29,7 +29,7 @@ func NewSimpleTxLogWatcher(endpoints []string, scanStartBlock uint64, scanInterv
 		scanStartBlock: scanStartBlock,
 		scanInterval:   scanInterval,
 		callback:       callback,
-		perScanBlockCount:1
+		perScanBlockCount:1,
 	}
 }
 
@@ -87,7 +87,7 @@ func (watcher *SimpleTxLogWatcher) SetScanInterval(interval time.Duration) {
 	watcher.scanInterval = interval
 }
 
-func (watcher *SimpleTxLogWatcher) GetPerScanBlockCount() uint64{
+func (watcher *SimpleTxLogWatcher) GetPerScanBlockCount() uint64 {
 	return watcher.perScanBlockCount
 }
 
