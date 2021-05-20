@@ -110,6 +110,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 	}
 
 	errorSleepSeconds := int64(10)
+	perScanBlock:=uint64(10)
 	currBlock := startBlock
 	finisedMaxBlock := startBlock - 1
 	filter := ethereum.FilterQuery{}
@@ -123,7 +124,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + " tx logs on client_" + strconv.Itoa(index) + "...")
 
 		filter.FromBlock = new(big.Int).SetUint64(currBlock)
-		filter.ToBlock = new(big.Int).SetUint64(currBlock)
+		filter.ToBlock = new(big.Int).SetUint64(currBlock+perScanBlock)
 		//filter.BlockHash = &currBlockHash
 		logs, err := client.FilterLogs(context.Background(), filter)
 		if err != nil {
@@ -144,7 +145,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 
 				blockNotMined=blockNumber < currBlock
 			}
-			
+
 			if(blockNotMined){
 				LogToConsole("block " + strconv.FormatUint(currBlock, 10) + " is not mined or not synced on client_" + strconv.Itoa(index) + ".")
 				break
@@ -164,8 +165,8 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		}
 
 		_lastBlockForwardTime = time.Now().Unix()
-		finisedMaxBlock = currBlock
-		currBlock++
+		finisedMaxBlock = currBlock+perScanBlock
+		currBlock+=perScanBlock+1
 	}
 
 	return finisedMaxBlock, nil
