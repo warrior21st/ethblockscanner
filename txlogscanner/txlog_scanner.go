@@ -121,7 +121,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		}
 		index := avaiIndexes[currBlock%uint64(len(avaiIndexes))]
 		client := clients[index]
-		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + " tx logs on client_" + strconv.Itoa(index) + "...")
+		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "-"+ strconv.FormatUint(currBlock+perScanBlock, 10) + " tx logs on client_" + strconv.Itoa(index) + "...")
 
 		filter.FromBlock = new(big.Int).SetUint64(currBlock)
 		filter.ToBlock = new(big.Int).SetUint64(currBlock+perScanBlock)
