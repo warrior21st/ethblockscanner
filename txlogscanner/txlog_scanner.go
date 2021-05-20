@@ -113,7 +113,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 	}
 
 	errorSleepSeconds := int64(10)
-	perScanBlock:=_txlogWatcher.GetPerScanBlockCount()
+	perScanIncrment:=_txlogWatcher.GetPerScanBlockCount()-1
 	currBlock := startBlock
 	finisedMaxBlock := startBlock - 1
 	filter := ethereum.FilterQuery{}
@@ -124,10 +124,10 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		}
 		index := avaiIndexes[currBlock%uint64(len(avaiIndexes))]
 		client := clients[index]
-		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "-"+ strconv.FormatUint(currBlock+perScanBlock, 10) + " tx logs on client_" + strconv.Itoa(index) + "...")
+		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "-"+ strconv.FormatUint(currBlock+perScanIncrment, 10) + " tx logs on client_" + strconv.Itoa(index) + "...")
 
 		filter.FromBlock = new(big.Int).SetUint64(currBlock)
-		filter.ToBlock = new(big.Int).SetUint64(currBlock+perScanBlock)
+		filter.ToBlock = new(big.Int).SetUint64(currBlock+perScanIncrment)
 		//filter.BlockHash = &currBlockHash
 		logs, err := client.FilterLogs(context.Background(), filter)
 		if err != nil {
