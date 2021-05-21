@@ -17,8 +17,6 @@ var (
 	_txlogWatcher          TxlogWatcher
 	_lastScanedBlockNumber uint64 = 0
 	_lastBlockForwardTime int64 = 0
-	_chainID               *big.Int
-	_signer                types.EIP155Signer
 	_clientSleepTimes      map[int]int64
 )
 
@@ -59,14 +57,6 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 	if err != nil {
 		return err
 	}
-
-	cid, err := clients[0].ChainID(context.Background())
-	if err != nil {
-		return err
-	}
-	_chainID = cid
-	_signer = types.NewEIP155Signer(_chainID)
-	LogToConsole("chainID:" + _chainID.String() + ",filter scaning...")
 
 	for i := 0; i < len(clients); i++ {
 		clients[i].Close()
