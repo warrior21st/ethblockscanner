@@ -128,7 +128,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		logs, err := client.FilterLogs(context.Background(), filter)
 		if err != nil {
 			_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
-			LogToConsole("client_" + strconv.Itoa(index) + "response error,sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
+			LogToConsole("client_" + strconv.Itoa(index) + " response error: "+err.Error()+",sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
 			continue
 		}
 
@@ -138,7 +138,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 				blockNumber,err:=client.BlockNumber(context.Background())
 				if err!=nil{
 					_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
-					LogToConsole("client_" + strconv.Itoa(index) + "response error,sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
+					LogToConsole("client_" + strconv.Itoa(index) + " response error: "+err.Error()+",sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
 					continue
 				}
 
