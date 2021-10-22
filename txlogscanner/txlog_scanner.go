@@ -8,15 +8,15 @@ import (
 	"time"
 
 	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/common"
 )
 
 var (
 	_txlogWatcher          TxlogWatcher
 	_lastScanedBlockNumber uint64 = 0
-	_lastBlockForwardTime int64 = 0
+	_lastBlockForwardTime  int64  = 0
 	_clientSleepTimes      map[int]int64
 )
 
@@ -67,7 +67,7 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 		scanInterval = 0
 	}
 	errCount := 0
-	for true {		
+	for true {
 		scanedBlock, err := scanTxLogs(_lastScanedBlockNumber + 1)
 		if err != nil {
 			if scanedBlock > 0 {
@@ -106,13 +106,13 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 	}
 
 	errorSleepSeconds := int64(10)
-	perScanIncrment:=_txlogWatcher.GetPerScanBlockCount()-1
+	perScanIncrment := _txlogWatcher.GetPerScanBlockCount() - 1
 	currBlock := startBlock
 	finisedMaxBlock := startBlock - 1
 	filter := ethereum.FilterQuery{
 		//Addresses:_txlogWatcher.GetInterestedAddresses(),
 	}
-	
+
 	for true {
 		avaiIndexes := RebuildAvaiIndexes(len(clients), &_clientSleepTimes)
 		if len(avaiIndexes) == 0 {
@@ -120,42 +120,42 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		}
 		index := avaiIndexes[currBlock%uint64(len(avaiIndexes))]
 		client := clients[index]
-		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "-"+ strconv.FormatUint(currBlock+perScanIncrment, 10) + " tx logs on client_" + strconv.Itoa(index) + "...")
+		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "-" + strconv.FormatUint(currBlock+perScanIncrment, 10) + " tx logs on client_" + strconv.Itoa(index) + "...")
 
 		filter.FromBlock = new(big.Int).SetUint64(currBlock)
-		filter.ToBlock = new(big.Int).SetUint64(currBlock+perScanIncrment)
+		filter.ToBlock = new(big.Int).SetUint64(currBlock + perScanIncrment)
 		//filter.BlockHash = &currBlockHash
 		logs, err := client.FilterLogs(context.Background(), filter)
 		if err != nil {
 			_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
-			LogToConsole("client_" + strconv.Itoa(index) + " response error: "+err.Error()+",sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
+			LogToConsole("client_" + strconv.Itoa(index) + " response error: " + err.Error() + ",sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
 			continue
 		}
 
 		if logs == nil || len(logs) == 0 {
-			blockNotMined:=true
-			if time.Now().Unix() - _lastBlockForwardTime>=10{
-				blockNumber,err:=client.BlockNumber(context.Background())
-				if err!=nil{
+			blockNotMined := true
+			if time.Now().Unix()-_lastBlockForwardTime >= 10 {
+				blockNumber, err := client.BlockNumber(context.Background())
+				if err != nil {
 					_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
-					LogToConsole("client_" + strconv.Itoa(index) + " response error: "+err.Error()+",sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
+					LogToConsole("client_" + strconv.Itoa(index) + " response error: " + err.Error() + ",sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
 					continue
 				}
 
-				LogToConsole("client_"+ strconv.Itoa(index) +" current blockheight: "+strconv.FormatUint(blockNumber, 10)+".")
-				blockNotMined=blockNumber < currBlock
+				LogToConsole("client_" + strconv.Itoa(index) + " current blockheight: " + strconv.FormatUint(blockNumber, 10) + ".")
+				blockNotMined = blockNumber < currBlock
 			}
 
-			if(blockNotMined){
+			if blockNotMined {
 				LogToConsole("block " + strconv.FormatUint(currBlock, 10) + " is not mined or not synced on client_" + strconv.Itoa(index) + ".")
 				break
-			}else{
+			} else {
 				currBlock++
 				continue
 			}
 		}
 
-		logBlock:=uint64(0)
+		logBlock := uint64(0)
 		for _, log := range logs {
 			if _txlogWatcher.IsInterestedLog(log.Address.Hex(), log.Topics[0].Hex()) {
 				err = _txlogWatcher.Callback(&log)
@@ -164,21 +164,21 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 				}
 			}
 
-			if logBlock==0{
-				logBlock=log.BlockNumber
-			}else{
-				if logBlock==log.BlockNumber-1{
-					finisedMaxBlock=logBlock
-					logBlock=log.BlockNumber
+			if logBlock == 0 {
+				logBlock = log.BlockNumber
+			} else {
+				if logBlock == log.BlockNumber-1 {
+					finisedMaxBlock = logBlock
+					logBlock = log.BlockNumber
 				}
 			}
 		}
 
-		if logs!=nil && len(logs)>0{
-			finisedMaxBlock=logs[len(logs)-1].BlockNumber
+		if logs != nil && len(logs) > 0 {
+			finisedMaxBlock = logs[len(logs)-1].BlockNumber
 		}
 		_lastBlockForwardTime = time.Now().Unix()
-		currBlock=finisedMaxBlock+1
+		currBlock = finisedMaxBlock + 1
 	}
 
 	return finisedMaxBlock, nil
