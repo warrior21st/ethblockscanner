@@ -105,83 +105,42 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		defer clients[i].Close()
 	}
 
-	errorSleepSeconds := int64(10)
 	perScanIncrment := _txlogWatcher.GetPerScanBlockCount() - 1
 	currBlock := startBlock
-	finisedMaxBlock := startBlock - 1
 	filter := ethereum.FilterQuery{
 		Addresses: _txlogWatcher.GetInterestedAddresses(),
 	}
 
-	for true {
-		avaiIndexes := RebuildAvaiIndexes(len(clients), &_clientSleepTimes)
-		if len(avaiIndexes) == 0 {
-			break
-		}
-		index := avaiIndexes[currBlock%uint64(len(avaiIndexes))]
-		client := clients[index]
-		LogToConsole("scaning block " + strconv.FormatUint(currBlock, 10) + "-" + strconv.FormatUint(currBlock+perScanIncrment, 10) + " tx logs on client_" + strconv.Itoa(index) + "...")
+	client := clients[0]
 
-		filter.FromBlock = new(big.Int).SetUint64(currBlock)
-		filter.ToBlock = new(big.Int).SetUint64(currBlock + perScanIncrment)
-		//filter.BlockHash = &currBlockHash
-		logs, err := client.FilterLogs(context.Background(), filter)
-		if err != nil {
-			_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
-			LogToConsole("client_" + strconv.Itoa(index) + " response error: " + err.Error() + ",sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
-			continue
-		}
+	blockHeight := getBlockNumber(client)
+	LogToConsole(fmt.Sprintf("current block height: %d", blockHeight))
 
-		if logs == nil || len(logs) == 0 {
-			blockNotMined := true
-			if time.Now().Unix()-_lastBlockForwardTime >= 10 {
-				blockNumber, err := client.BlockNumber(context.Background())
-				if err != nil {
-					_clientSleepTimes[index] = time.Now().UTC().Unix() + errorSleepSeconds
-					LogToConsole("client_" + strconv.Itoa(index) + " response error: " + err.Error() + ",sleep " + strconv.FormatInt(errorSleepSeconds, 10) + "s.")
-					continue
-				}
-
-				LogToConsole("client_" + strconv.Itoa(index) + " current blockheight: " + strconv.FormatUint(blockNumber, 10) + ".")
-				blockNotMined = blockNumber < currBlock
-			}
-
-			if blockNotMined {
-				LogToConsole("block " + strconv.FormatUint(currBlock, 10) + " is not mined or not synced on client_" + strconv.Itoa(index) + ".")
-				break
-			} else {
-				currBlock++
-				continue
-			}
-		}
-
-		logBlock := uint64(0)
-		for _, log := range logs {
-			if _txlogWatcher.IsInterestedLog(log.Address.Hex(), log.Topics[0].Hex()) {
-				err = _txlogWatcher.Callback(&log)
-				if err != nil {
-					panic(err)
-				}
-			}
-
-			if logBlock == 0 {
-				logBlock = log.BlockNumber
-			} else {
-				if logBlock == log.BlockNumber-1 {
-					finisedMaxBlock = logBlock
-					logBlock = log.BlockNumber
-				}
-			}
-		}
-
-		if logs != nil && len(logs) > 0 {
-			finisedMaxBlock = logs[len(logs)-1].BlockNumber
-		}
-		_lastBlockForwardTime = time.Now().Unix()
-		currBlock = finisedMaxBlock + 1
+	filter.FromBlock = new(big.Int).SetUint64(currBlock)
+	filter.ToBlock = new(big.Int).SetUint64(currBlock + perScanIncrment)
+	if uint64(filter.ToBlock.Int64()) > blockHeight {
+		filter.ToBlock = big.NewInt(int64(blockHeight))
 	}
 
-	return filter.ToBlock.Uint64(), nil
+	LogToConsole(fmt.Sprintf("scaning block %s - %s tx logs...", filter.FromBlock.String(), filter.ToBlock.String()))
+
+	logs, err := client.FilterLogs(context.Background(), filter)
+	for err != nil {
+		LogToConsole(fmt.Sprintf("get logs error: %s,sleep 1s...", err.Error()))
+		time.Sleep(time.Second)
+		logs, err = client.FilterLogs(context.Background(), filter)
+	}
+
+	for _, log := range logs {
+		if _txlogWatcher.IsInterestedLog(log.Address.Hex(), log.Topics[0].Hex()) {
+			err = _txlogWatcher.Callback(&log)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	return filter.ToBlock.Uint64() + 1, nil
 }
 
 func LogToConsole(msg string) {
@@ -198,4 +157,15 @@ func RebuildAvaiIndexes(clientsCount int, clientSleepTimes *map[int]int64) []int
 	}
 
 	return avaiIndexes
+}
+
+func getBlockNumber(client *ethclient.Client) uint64 {
+	blockNumber, err := client.BlockNumber(context.Background())
+	for err != nil {
+		LogToConsole(fmt.Sprintf("get block height error: %s,sleep 1s...", err.Error()))
+		time.Sleep(time.Second)
+		blockNumber, err = client.BlockNumber(context.Background())
+	}
+
+	return blockNumber
 }
