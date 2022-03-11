@@ -160,7 +160,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 			if _txlogWatcher.IsInterestedLog(log.Address.Hex(), log.Topics[0].Hex()) {
 				err = _txlogWatcher.Callback(&log)
 				if err != nil {
-					return finisedMaxBlock, err
+					panic(err)
 				}
 			}
 
@@ -181,7 +181,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 		currBlock = finisedMaxBlock + 1
 	}
 
-	return finisedMaxBlock, nil
+	return filter.ToBlock.Uint64(), nil
 }
 
 func LogToConsole(msg string) {
