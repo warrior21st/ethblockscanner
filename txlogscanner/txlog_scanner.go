@@ -59,7 +59,7 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 	}
 
 	for i := 0; i < len(clients); i++ {
-		clients[i].Close()
+		defer clients[i].Close()
 	}
 
 	scanInterval := _txlogWatcher.GetScanInterval()
@@ -68,7 +68,7 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 	}
 	errCount := 0
 	for true {
-		scanedBlock, err := scanTxLogs(_lastScanedBlockNumber + 1)
+		scanedBlock, err := scanTxLogs(clients[0], _lastScanedBlockNumber+1)
 		if err != nil {
 			if scanedBlock > 0 {
 				_lastScanedBlockNumber = scanedBlock
@@ -95,23 +95,13 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 	return nil
 }
 
-func scanTxLogs(startBlock uint64) (uint64, error) {
-	clients, err := _txlogWatcher.GetEthClients()
-	if err != nil {
-		return 0, err
-	}
-
-	for i := 0; i < len(clients); i++ {
-		defer clients[i].Close()
-	}
+func scanTxLogs(client *ethclient.Client, startBlock uint64) (uint64, error) {
 
 	perScanIncrment := _txlogWatcher.GetPerScanBlockCount() - 1
 	currBlock := startBlock
 	filter := ethereum.FilterQuery{
 		Addresses: _txlogWatcher.GetInterestedAddresses(),
 	}
-
-	client := clients[0]
 
 	blockHeight := getBlockNumber(client)
 	LogToConsole(fmt.Sprintf("current block height: %d", blockHeight))
