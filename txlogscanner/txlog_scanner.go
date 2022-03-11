@@ -110,7 +110,7 @@ func scanTxLogs(startBlock uint64) (uint64, error) {
 	currBlock := startBlock
 	finisedMaxBlock := startBlock - 1
 	filter := ethereum.FilterQuery{
-		//Addresses:_txlogWatcher.GetInterestedAddresses(),
+		Addresses: _txlogWatcher.GetInterestedAddresses(),
 	}
 
 	for true {
