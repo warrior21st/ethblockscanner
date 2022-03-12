@@ -97,8 +97,7 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 
 func scanTxLogs(client *ethclient.Client, startBlock uint64) (uint64, error) {
 
-	perScanIncrment := _txlogWatcher.GetPerScanBlockCount() - 1
-	currBlock := startBlock
+	perScanIncrment := _txlogWatcher.GetPerScanBlockCount()
 	filter := ethereum.FilterQuery{
 		Addresses: _txlogWatcher.GetInterestedAddresses(),
 	}
@@ -106,10 +105,15 @@ func scanTxLogs(client *ethclient.Client, startBlock uint64) (uint64, error) {
 	blockHeight := getBlockNumber(client)
 	LogToConsole(fmt.Sprintf("current block height: %d", blockHeight))
 
-	filter.FromBlock = new(big.Int).SetUint64(currBlock)
-	filter.ToBlock = new(big.Int).SetUint64(currBlock + perScanIncrment)
-	if uint64(filter.ToBlock.Int64()) > blockHeight {
+	if startBlock == 0 {
+		filter.FromBlock = big.NewInt(0)
+	} else {
+		filter.FromBlock = new(big.Int).SetUint64(startBlock - 1)
+	}
+	if uint64(startBlock+perScanIncrment) > blockHeight {
 		filter.ToBlock = big.NewInt(int64(blockHeight))
+	} else {
+		filter.ToBlock = new(big.Int).SetUint64(startBlock + perScanIncrment)
 	}
 
 	LogToConsole(fmt.Sprintf("scaning block %s - %s tx logs...", filter.FromBlock.String(), filter.ToBlock.String()))
