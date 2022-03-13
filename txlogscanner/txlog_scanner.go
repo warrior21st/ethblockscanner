@@ -108,7 +108,11 @@ func scanTxLogs(client *ethclient.Client, startBlock uint64) (uint64, error) {
 	if startBlock == 0 {
 		filter.FromBlock = big.NewInt(0)
 	} else {
-		filter.FromBlock = new(big.Int).SetUint64(startBlock - 1)
+		if blockHeight < startBlock-1 {
+			filter.FromBlock = new(big.Int).SetUint64(blockHeight)
+		} else {
+			filter.FromBlock = new(big.Int).SetUint64(startBlock - 1)
+		}
 	}
 	if uint64(startBlock+perScanIncrment) > blockHeight {
 		filter.ToBlock = big.NewInt(int64(blockHeight))
@@ -134,7 +138,7 @@ func scanTxLogs(client *ethclient.Client, startBlock uint64) (uint64, error) {
 		}
 	}
 
-	return filter.ToBlock.Uint64() + 1, nil
+	return filter.ToBlock.Uint64(), nil
 }
 
 func LogToConsole(msg string) {
