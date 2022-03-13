@@ -114,10 +114,11 @@ func scanTxLogs(client *ethclient.Client, startBlock uint64) (uint64, error) {
 			filter.FromBlock = new(big.Int).SetUint64(startBlock - 1)
 		}
 	}
-	if uint64(startBlock+perScanIncrment) > blockHeight {
+	from := uint64(filter.FromBlock.Int64())
+	if from+perScanIncrment > blockHeight {
 		filter.ToBlock = big.NewInt(int64(blockHeight))
 	} else {
-		filter.ToBlock = new(big.Int).SetUint64(startBlock + perScanIncrment)
+		filter.ToBlock = new(big.Int).SetUint64(from + perScanIncrment)
 	}
 
 	LogToConsole(fmt.Sprintf("scaning block %s - %s tx logs...", filter.FromBlock.String(), filter.ToBlock.String()))
