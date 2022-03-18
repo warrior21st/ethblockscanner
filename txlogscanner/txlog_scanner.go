@@ -13,12 +13,12 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
-var (
-	// _txlogWatcher          TxlogWatcher
-	// _lastScanedBlockNumber uint64 = 0
-	_lastBlockForwardTime int64 = 0
-	// _clientSleepTimes      map[int]int64
-)
+// var (
+// 	// _txlogWatcher          TxlogWatcher
+// 	// _lastScanedBlockNumber uint64 = 0
+// 	// _lastBlockForwardTime int64 = 0
+// 	// _clientSleepTimes      map[int]int64
+// )
 
 type TxlogWatcher interface {
 	//获取开始扫描的区块号
