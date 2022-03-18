@@ -49,7 +49,7 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 	_clientSleepTimes = make(map[int]int64)
 	startBlock := _txlogWatcher.GetScanStartBlock()
 	if startBlock > 0 {
-		startBlock = startBlock - 1
+		startBlock = startBlock - 2
 	}
 	if _lastScanedBlockNumber == 0 && startBlock > 0 {
 		_lastScanedBlockNumber = startBlock
@@ -106,6 +106,12 @@ func scanTxLogs(client *ethclient.Client, startBlock uint64) (uint64, error) {
 
 	blockHeight := getBlockNumber(client)
 	LogToConsole(fmt.Sprintf("current block height: %d", blockHeight))
+
+	if startBlock > blockHeight {
+		LogToConsole(fmt.Sprintf("block %d not minted,sleep 1s...", startBlock))
+		time.Sleep(time.Second)
+		return startBlock - 1, nil
+	}
 
 	filter.FromBlock = new(big.Int).SetUint64(startBlock)
 	filter.ToBlock = new(big.Int).SetUint64(startBlock + perScanIncrment)
