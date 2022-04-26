@@ -40,6 +40,8 @@ type TxlogWatcher interface {
 
 	//获取扫描间隔
 	GetScanInterval() time.Duration
+
+	UpdateMaxScanedBlock(blockNumber uint64)
 }
 
 //开始扫描
@@ -77,6 +79,7 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 				errCount++
 			}
 		} else {
+			txlogWatcher.UpdateMaxScanedBlock(scanedBlock)
 			lastScanedBlockNumber = scanedBlock
 			errCount = 0
 		}
