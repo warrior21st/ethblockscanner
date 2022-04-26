@@ -32,6 +32,8 @@ type TxlogWatcher interface {
 
 	GetInterestedAddresses() []common.Address
 
+	GetInterestedTopics() []common.Hash
+
 	//是否是需要解析的tx
 	IsInterestedLog(address string, topic0 string) bool
 
@@ -102,10 +104,12 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 func scanTxLogs(client *ethclient.Client, startBlock uint64, txlogWatcher TxlogWatcher) (uint64, error) {
 
 	// currBlock := startBlock
+	topics := make([][]common.Hash, 1)
+	topics[0] = txlogWatcher.GetInterestedTopics()
 	filter := ethereum.FilterQuery{
 		Addresses: txlogWatcher.GetInterestedAddresses(),
+		Topics:    topics,
 	}
-
 	blockHeight := getBlockNumber(client)
 	LogToConsole(fmt.Sprintf("current block height: %d", blockHeight))
 

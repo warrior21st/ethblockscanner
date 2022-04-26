@@ -19,6 +19,7 @@ type SimpleTxLogWatcher struct {
 	scanStartBlock       uint64
 	interestedLogs       map[string]interface{}
 	interestedAddresses  []common.Address
+	interestedTopics     []common.Hash
 	scanInterval         time.Duration
 	callback             func(*types.Log) error
 	updateMaxScanedBlock func(uint64)
@@ -55,10 +56,15 @@ func (watcher *SimpleTxLogWatcher) AddInterestedParams(address string, topic0 st
 		watcher.interestedAddresses = make([]common.Address, 1)
 	}
 	watcher.interestedAddresses = append(watcher.interestedAddresses, common.HexToAddress(address))
+	watcher.interestedTopics = append(watcher.interestedTopics, common.HexToHash(topic0))
 }
 
 func (watcher *SimpleTxLogWatcher) GetInterestedAddresses() []common.Address {
 	return watcher.interestedAddresses
+}
+
+func (watcher *SimpleTxLogWatcher) GetInterestedTopics() []common.Hash {
+	return watcher.interestedTopics
 }
 
 func (watcher *SimpleTxLogWatcher) GetScanStartBlock() uint64 {
