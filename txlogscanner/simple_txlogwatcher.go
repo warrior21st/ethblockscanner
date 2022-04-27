@@ -95,8 +95,8 @@ func (watcher *SimpleTxLogWatcher) IsInterestedLog(addr string, topic0 string) b
 }
 
 //tx回调处理方法
-func (watcher *SimpleTxLogWatcher) Callback(tx *types.Log) error {
-	return watcher.callback(tx)
+func (watcher *SimpleTxLogWatcher) Callback(tx *types.Log) {
+	watcher.callback(tx)
 }
 
 //获取区块扫描间隔

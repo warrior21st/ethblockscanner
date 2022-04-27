@@ -38,7 +38,7 @@ type TxlogWatcher interface {
 	IsInterestedLog(address string, topic0 string) bool
 
 	//tx log回调处理方法
-	Callback(txlog *types.Log) error
+	Callback(txlog *types.Log)
 
 	//获取扫描间隔
 	GetScanInterval() time.Duration
@@ -136,10 +136,7 @@ func scanTxLogs(client *ethclient.Client, startBlock uint64, txlogWatcher TxlogW
 
 	for _, log := range logs {
 		if txlogWatcher.IsInterestedLog(log.Address.Hex(), log.Topics[0].Hex()) {
-			err = txlogWatcher.Callback(&log)
-			if err != nil {
-				panic(err)
-			}
+			txlogWatcher.Callback(&log)
 		}
 	}
 
