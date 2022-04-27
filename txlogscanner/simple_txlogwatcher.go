@@ -21,12 +21,12 @@ type SimpleTxLogWatcher struct {
 	interestedAddresses  []common.Address
 	interestedTopics     []common.Hash
 	scanInterval         time.Duration
-	callback             func(*types.Log) error
+	callback             func(*types.Log)
 	updateMaxScanedBlock func(uint64)
 }
 
 //构造一个新的简单tx管理结构(默认3秒钟扫描一次)
-func NewSimpleTxLogWatcher(endpoints []string, scanStartBlock uint64, scanInterval time.Duration, callback func(*types.Log) error) *SimpleTxLogWatcher {
+func NewSimpleTxLogWatcher(endpoints []string, scanStartBlock uint64, scanInterval time.Duration, callback func(*types.Log)) *SimpleTxLogWatcher {
 
 	return &SimpleTxLogWatcher{
 		endpoints:         endpoints,
