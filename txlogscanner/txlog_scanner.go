@@ -67,10 +67,10 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 		defer clients[i].Close()
 	}
 
-	scanInterval := txlogWatcher.GetScanInterval()
-	if scanInterval <= time.Millisecond {
-		scanInterval = 0
-	}
+	// scanInterval := txlogWatcher.GetScanInterval()
+	// if scanInterval <= time.Millisecond {
+	// 	scanInterval = 0
+	// }
 	errCount := 0
 	for true {
 		scanedBlock, err := scanTxLogs(clients[0], lastScanedBlockNumber+1, txlogWatcher)
@@ -93,9 +93,9 @@ func StartScanTxLogs(txlogWatcher TxlogWatcher) error {
 			errCount = 0
 		}
 
-		if scanInterval > 0 {
-			time.Sleep(scanInterval)
-		}
+		// if scanInterval > 0 {
+		// 	time.Sleep(scanInterval)
+		// }
 	}
 
 	return nil
@@ -114,8 +114,12 @@ func scanTxLogs(client *ethclient.Client, startBlock uint64, txlogWatcher TxlogW
 	LogToConsole(fmt.Sprintf("current block height: %d", blockHeight))
 
 	if startBlock > blockHeight {
-		LogToConsole(fmt.Sprintf("block %d not minted,sleep 1s...", startBlock))
-		time.Sleep(time.Second)
+		interval := txlogWatcher.GetScanInterval()
+		if interval < time.Second {
+			interval = time.Second
+		}
+		LogToConsole(fmt.Sprintf("block %d not minted,sleep %ds...", startBlock, int64(interval/time.Second)))
+		time.Sleep(interval)
 		return startBlock - 1, nil
 	}
 
